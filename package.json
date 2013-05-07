@@ -5,6 +5,6 @@
      "dependencies": {
         "express": "",
         "socket.io": "",
-        "canvas": "*"
+        "canvas": "*",
      }
 }
