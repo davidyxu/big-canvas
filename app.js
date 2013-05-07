@@ -1,3 +1,11 @@
+var Canvas = require('canvas')
+  , canvas = new Canvas(600, 600)
+  , context = canvas.getContext('2d')
+  , fs = require('fs');
+
+
+var drawHistory = []
+
 var express = require('express')
   , app = express()
   , http = require('http')
@@ -19,10 +27,24 @@ io.configure(function () {
 });
 
 io.sockets.on('connection', function(socket) {
-	socket.on('somestuff', function(data) {
-		io.sockets.emit('updatecanvas', data)
-	});
+
+	//alternative to drawboard, returns history of drawn points
+	// socket.emit('drawAll', drawHistory);
+
+	// return canvas
+	socket.emit('drawBoard', canvas.toDataURL());
+
 	socket.on('draw', function(data) {
-		io.sockets.emit('updatecanvas', data)
+
+		//keep server-side canvas on 
+		context.beginPath();
+		context.moveTo(data.fromX, data.fromY);
+		context.lineTo(data.toX, data.toY);
+		context.stroke();
+		context.closePath();
+		
+		drawHistory.push(data);
+		io.sockets.emit('updatecanvas', data);
 	});
 });
+

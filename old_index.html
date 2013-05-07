@@ -1,5 +1,6 @@
 <html>
 <head>
+<link href="big_canvas.css" rel="stylesheet" type="text/css">
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script>
@@ -12,33 +13,13 @@
     console.log("connected")
   });
 
-  socket.on('drawBoard', function(dataURL) {
-  	var img = new Image();  
-    img.onload = function(){  
-        //Have to draw on the Canvas here for the image to load properly  
-        context.drawImage(img, 0, 0);  
-    }  
-    img.src = dataURL;  
-  	console.log(dataURL);
-  });
-
   socket.on('updatecanvas', function(data) {
   	context.beginPath();
-		context.moveTo(data.fromX, data.fromY);
-		context.lineTo(data.toX, data.toY);
+		context.moveTo(data.fromX-offsetX, data.fromY-offsetY);
+		context.lineTo(data.toX-offsetX, data.toY-offsetY);
 		context.stroke();
 		context.closePath();
   });
-
-  socket.on('drawAll', function(drawHistory) {
-  	for (var i = 0; i < drawHistory.length; i++) {
-	  	context.beginPath();
-			context.moveTo(drawHistory[i].fromX, drawHistory[i].fromY);
-			context.lineTo(drawHistory[i].toX, drawHistory[i].toY);
-			context.stroke();
-			context.closePath();
-  	}
-  })
 
   $(function() {
   	context = $('canvas')[0].getContext("2d");
@@ -57,10 +38,10 @@
 				toX = e.clientX
 				toY = e.clientY
 				socket.emit('draw', {
-					fromX:fromX,
-					fromY:fromY,
-					toX: toX,
-					toY: toY	
+					fromX:fromX+offsetX,
+					fromY:fromY+offsetY,
+					toX: toX+offsetX,
+					toY: toY+offsetY	
 				})
 				fromX = toX
 				fromY = toY
@@ -77,19 +58,19 @@
 			switch (pressedKey) {
 				case 37:
 					console.log("left");
-					offsetX -= 1;
+					offsetX -= 10;
 					break;
 				case 38:
 					console.log("up");
-					offsetY += 1;
+					offsetY += 10;
 					break;
 				case 39:
 					console.log("right");
-					offsetX += 1;
+					offsetX += 10;
 					break;
 				case 40:
 					console.log("down");
-					offsetY -= 1;
+					offsetY -= 10;
 					break;
 			}
 		});
