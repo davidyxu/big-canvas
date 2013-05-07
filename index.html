@@ -3,10 +3,14 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script>
-	offsetX = 0
-	offsetY = 0
-  var socket = io.connect(window.location.hostname);
-  fromX = null
+	var socket = io.connect(window.location.hostname);
+
+	offsetX = 0;
+	offsetY = 0;
+  
+  fromX = null;
+  fromY = null;
+
   socket.on('connect', function(){
     // call the server-side function 'adduser' and send one parameter (value of prompt)
     console.log("connected")
@@ -56,12 +60,19 @@
 			if (fromX) {
 				toX = e.clientX
 				toY = e.clientY
-				socket.emit('draw', {
+				var data = {
 					fromX:fromX,
 					fromY:fromY,
 					toX: toX,
 					toY: toY	
-				})
+				};
+		  	context.beginPath();
+				context.moveTo(data.fromX, data.fromY);
+				context.lineTo(data.toX, data.toY);
+				context.stroke();
+				context.closePath();
+
+				socket.emit('draw', data)
 				fromX = toX
 				fromY = toY
 			}

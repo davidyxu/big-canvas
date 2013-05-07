@@ -44,7 +44,8 @@ io.sockets.on('connection', function(socket) {
 		context.closePath();
 		
 		drawHistory.push(data);
-		io.sockets.emit('updatecanvas', data);
+
+		socket.broadcast.emit('updatecanvas', data);
 	});
 });
 
