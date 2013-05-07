@@ -1,10 +1,12 @@
 var Canvas = require('canvas')
-  , canvas = new Canvas(600, 600)
+  , canvas = new Canvas(1000, 1000)
   , context = canvas.getContext('2d')
   , fs = require('fs');
 
 
-var drawHistory = []
+var drawHistory = [];
+
+var activeRooms = {};
 
 var express = require('express')
   , app = express()
@@ -32,20 +34,39 @@ io.sockets.on('connection', function(socket) {
 	// socket.emit('drawAll', drawHistory);
 
 	// return canvas
-	socket.emit('drawBoard', canvas.toDataURL());
 
-	socket.on('draw', function(data) {
+	//inititalize at origin, later to be determiend by algorithm
+	socket.emit('start', 0, 0);
+
+	//socket.emit('drawBoard', canvas.toDataURL());
+
+	socket.on('subscribe', function(data) {
+		socket.join(data);
+		socket.emit('test', "joining");
+		
+	})
+	socket.on('unsubscribe', function(data) {
+		socket.leave(data);
+		socket.emit('test', "leaving");
+	})
+
+	socket.on('drawHistory', function(roomID, data) {
+		socket.broadcast.to(roomID).emit('updatecanvas', roomID, data);		
+	})
+
+	//maintain serverside rooms
+	socket.on('draw', function(roomID, data) {
 
 		//keep server-side canvas on 
-		context.beginPath();
-		context.moveTo(data.fromX, data.fromY);
-		context.lineTo(data.toX, data.toY);
-		context.stroke();
-		context.closePath();
+		// context.beginPath();
+		// context.moveTo(data.fromX, data.fromY);
+		// context.lineTo(data.toX, data.toY);
+		// context.stroke();
+		// context.closePath();
 		
-		drawHistory.push(data);
+		// drawHistory.push(data);
 
-		socket.broadcast.emit('updatecanvas', data);
+		socket.broadcast.to(roomID).emit('updatecanvas', roomID, data);
 	});
 });
 

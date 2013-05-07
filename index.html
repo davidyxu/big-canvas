@@ -1,116 +1,99 @@
 <html>
 <head>
+<link rel="stylesheet" type="text/css" href="https://s3.amazonaws.com/big-canvas/assets/css/big-canvas.css">
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script src="https://s3.amazonaws.com/big-canvas/assets/js/big-canvas.js"></script>
 <script>
 	var socket = io.connect(window.location.hostname);
-
-	offsetX = 0;
-	offsetY = 0;
-  
-  fromX = null;
-  fromY = null;
-
   socket.on('connect', function(){
-    // call the server-side function 'adduser' and send one parameter (value of prompt)
     console.log("connected")
   });
-
-  socket.on('drawBoard', function(dataURL) {
-  	var img = new Image();  
-    img.onload = function(){  
-        //Have to draw on the Canvas here for the image to load properly  
-        context.drawImage(img, 0, 0);  
-    }  
-    img.src = dataURL;  
-  	console.log(dataURL);
+  socket.on('start', function(x, y) {
+  	$(function() {
+			BC.initialize(x, y);
+  	});
   });
+  socket.on('test', function(data) {
+		console.log(data);
+		console.log("data");
+	})
+	socket.on('updatecanvas', function(roomID, history) {
+		var parsedID = roomID.slice(1).split('y');
+		var room = BC.findRoom(parseInt(parsedID[0]), parseInt(parsedID[1]))
 
-  socket.on('updatecanvas', function(data) {
-  	context.beginPath();
-		context.moveTo(data.fromX, data.fromY);
-		context.lineTo(data.toX, data.toY);
-		context.stroke();
-		context.closePath();
-  });
-
-  socket.on('drawAll', function(drawHistory) {
-  	for (var i = 0; i < drawHistory.length; i++) {
-	  	context.beginPath();
-			context.moveTo(drawHistory[i].fromX, drawHistory[i].fromY);
-			context.lineTo(drawHistory[i].toX, drawHistory[i].toY);
-			context.stroke();
-			context.closePath();
-  	}
-  })
+		room.drawHistory(history);
+	})
 
   $(function() {
-  	context = $('canvas')[0].getContext("2d");
-		context.strokeStyle = "red";
-		context.lineWidth = 1.0;
-		context.lineJoin = "round";
 
-		$('canvas').mousedown(function(e) {
-			console.log(e.clientX)
-			fromX = e.clientX
-			fromY = e.clientY
-			console.log(e.clientY)
-		});
-		$('canvas').mousemove(function(e) {
-			if (fromX) {
-				toX = e.clientX
-				toY = e.clientY
-				var data = {
-					fromX:fromX,
-					fromY:fromY,
-					toX: toX,
-					toY: toY	
-				};
-		  	context.beginPath();
-				context.moveTo(data.fromX, data.fromY);
-				context.lineTo(data.toX, data.toY);
-				context.stroke();
-				context.closePath();
+	//	BC.initialize(0, 0);
+  // 	context = $('canvas')[0].getContext("2d");
+		// context.strokeStyle = "red";
+		// context.lineWidth = 1.0;
+		// context.lineJoin = "round";
 
-				socket.emit('draw', data)
-				fromX = toX
-				fromY = toY
-			}
-		});
 
-		$(document).mouseup(function(e) {
-			fromX = null;
-			fromY = null;
-		});
+	 //  socket.on('drawBoard', function(dataURL) {
+	 //  	var img = new Image();  
+	 //    img.onload = function(){  
+	 //        context.drawImage(img, 0, 0);  
+	 //    }  
+	 //    img.src = dataURL;  
+	 //  	console.log(dataURL);
+	 //  });
 
-		$(document).keydown(function(e) {
-			var pressedKey = e.which
-			switch (pressedKey) {
-				case 37:
-					console.log("left");
-					offsetX -= 1;
-					break;
-				case 38:
-					console.log("up");
-					offsetY += 1;
-					break;
-				case 39:
-					console.log("right");
-					offsetX += 1;
-					break;
-				case 40:
-					console.log("down");
-					offsetY -= 1;
-					break;
-			}
-		});
+	 //  //draw a single canvas
+	 //  socket.on('updatecanvas', function(data) {
+	 //  	context.beginPath();
+		// 	context.moveTo(data.fromX, data.fromY);
+		// 	context.lineTo(data.toX, data.toY);
+		// 	context.stroke();
+		// 	context.closePath();
+	 //  });
 
+	 //  //draw queue of draw commands
+	 //  socket.on('drawAll', function(drawHistory) {
+	 //  	for (var i = 0; i < drawHistory.length; i++) {
+		//   	context.beginPath();
+		// 		context.moveTo(drawHistory[i].fromX, drawHistory[i].fromY);
+		// 		context.lineTo(drawHistory[i].toX, drawHistory[i].toY);
+		// 		context.stroke();
+		// 		context.closePath();
+	 //  	}
+	 //  })
+
+
+		// //actionlisteners
+		// $('canvas').mousedown(function(e) {
+		// 	fromX = e.pageX
+		// 	fromY = e.pageY
+		// });
+		// $('canvas').mousemove(function(e) {
+		// 	if (fromX) {
+		// 		toX = e.pageX
+		// 		toY = e.pageY
+		// 		var data = {
+		// 			fromX:fromX,
+		// 			fromY:fromY,
+		// 			toX: toX,
+		// 			toY: toY	
+		// 		};
+		//   	context.beginPath();
+		// 		context.moveTo(data.fromX, data.fromY);
+		// 		context.lineTo(data.toX, data.toY);
+		// 		context.stroke();
+		// 		context.closePath();
+
+		// 		socket.emit('draw', data)
+		// 		fromX = toX
+		// 		fromY = toY
+		// 	}
+		// });
   });
 </script>
 </head>
 <body>
-<canvas id="myCanvas" width="600" height="600"
-style="border:1px solid #000000;">
-</canvas>
+	<div id="viewport"></div>
 </body>
 </html>
