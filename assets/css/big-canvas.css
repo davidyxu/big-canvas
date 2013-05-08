@@ -1,14 +1,26 @@
 #viewport {
 	overflow: hidden;
-	border: 1px solid black;
 	position: relative;
 	margin: auto;
+}
+#instruction-container {
 	width: 100%;
 	height: 100%;
+	background-color:black;
+  opacity:0.6;
+  position: absolute;
+  filter:alpha(opacity=60);
+}
+
+#instructions {
+	margin: auto;
+	position: absolute;
+	width: 200px;
+	height: 200px;
+	background-color: white;
 }
 
 .canvas-container {
-	border: 1px dashed blue;
  	width:  1000px;
   height: 1000px;
 	position: absolute;
@@ -17,6 +29,30 @@
 }
 
 html, body {
- 
   margin: 0px;
+  font-family: 'Roboto Slab', serif;
+}
+
+#menu {
+	position: fixed;
+	bottom: 0;
+	border-top: 1px solid black;
+	background: gray;
+	height: 29px;
+	z-index: 2;
+}
+#menu-options {
+  margin: 2px;
+}
+input {
+  border: 1px solid black;
+  background: white;
+  font: 13px;
+}
+input#color-picker {
+  width: 65px;
+}
+
+input#size-picker {
+  width: 35px;
 }

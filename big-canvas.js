@@ -9,6 +9,12 @@ BC = {
 	offsetY: 0,
 	fromX: null,
 	fromY: null,
+	style: {
+		color: "#000000",
+		width: 1.0,
+		lineCap: "round",
+		lineJoin: "round"
+	},
 	rooms: [],
 
 	initialize: function(x, y) {
@@ -113,6 +119,7 @@ BC = {
 		$('#viewport').mousedown(function(e) {
 			if (e.which === 3 || e.button === 2) {
 				BC.rightClick = true;
+				document.body.style.cursor = 'move';
 			}
 
 			BC.fromX = e.pageX + BC.offsetX;
@@ -135,7 +142,7 @@ BC = {
 					$('.canvas-container').css('left', function(i, v) {
 				    return (parseFloat(v) - shiftLeft) + 'px';
 					});
-					
+
 					BC.updateRooms();
 				} else {
 					BC.drawLine();
@@ -145,6 +152,7 @@ BC = {
 		$('#viewport').mouseup(function(e) {
 			if (BC.rightClick) {
 				BC.rightClick = false;
+				document.body.style.cursor = 'default';
 			}
 			if (BC.fromX) {
 				BC.fromX = null;

@@ -1,5 +1,6 @@
 <html>
 <head>
+<link href='http://fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" type="text/css" href="https://s3.amazonaws.com/big-canvas/assets/css/big-canvas.css">
 <script src="/socket.io/socket.io.js"></script>
 
@@ -7,6 +8,10 @@
 
 <script src="https://s3.amazonaws.com/big-canvas/assets/js/room.js"></script>
 <script src="https://s3.amazonaws.com/big-canvas/assets/js/big-canvas.js"></script>
+
+<link rel="stylesheet" media="screen" type="text/css" href="https://s3.amazonaws.com/big-canvas/assets/css/colorpicker.css" />
+<script type="text/javascript" src="https://s3.amazonaws.com/big-canvas/assets/js/colorpicker.js"></script>
+
 <script>
 	var socket = io.connect(window.location.hostname);
   socket.on('connect', function(){
@@ -17,15 +22,12 @@
 			BC.initialize(x, y);
   	});
   });
-  socket.on('test', function(data) {
-		console.log(data);
-		console.log("data");
-	})
-	socket.on('updatecanvas', function(roomID, history) {
+
+	socket.on('updatecanvas', function(roomID, style, history) {
 		var parsedID = roomID.slice(1).split('y');
 		var room = BC.findRoom(parseInt(parsedID[0]), parseInt(parsedID[1]))
 
-		room.drawHistory(history);
+		room.drawHistory(style, history);
 	})
 
 	socket.on('loadhistory', function(roomID, url) {
@@ -35,74 +37,51 @@
 	});
 
   $(function() {
+  	$('#size-picker').change(function() {
+  		BC.style.width = $('#size-picker').val();
+  	});
+  	$('#color-picker').val('#000000');
 
-	//	BC.initialize(0, 0);
-  // 	context = $('canvas')[0].getContext("2d");
-		// context.strokeStyle = "red";
-		// context.lineWidth = 1.0;
-		// context.lineJoin = "round";
+	  $('#color-picker').ColorPicker({
+			onBeforeShow: function () {
+				$('#color-picker').ColorPickerSetColor(this.value);
+			},
+			onSubmit: function(hsb, hex, rgb, el) {
+				$(el).val(rgb);
+				BC.style.color = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + "0.5" + ")";
+				$(el).ColorPickerHide();
+			},
+			onChange: function (hsb, hex, rgb) {
+				console.log(rgb)
+				$('#color-picker').val('#' + hex);
+				BC.style.color = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + "," + "0.5" + ")";
+				console.log(BC.style.color);
+			}
+	  });	
+		$('#viewport').width(window.innerWidth);
+		$('#viewport').height(window.innerHeight - 30);
 
+		$('#menu').width(window.innerWidth);
 
-	 //  socket.on('drawBoard', function(dataURL) {
-	 //  	var img = new Image();  
-	 //    img.onload = function(){  
-	 //        context.drawImage(img, 0, 0);  
-	 //    }  
-	 //    img.src = dataURL;  
-	 //  	console.log(dataURL);
-	 //  });
+		$(window).resize(function() {
+			$('#viewport').width(window.innerWidth);
+			$('#viewport').height(window.innerHeight - 30);
 
-	 //  //draw a single canvas
-	 //  socket.on('updatecanvas', function(data) {
-	 //  	context.beginPath();
-		// 	context.moveTo(data.fromX, data.fromY);
-		// 	context.lineTo(data.toX, data.toY);
-		// 	context.stroke();
-		// 	context.closePath();
-	 //  });
-
-	 //  //draw queue of draw commands
-	 //  socket.on('drawAll', function(drawHistory) {
-	 //  	for (var i = 0; i < drawHistory.length; i++) {
-		//   	context.beginPath();
-		// 		context.moveTo(drawHistory[i].fromX, drawHistory[i].fromY);
-		// 		context.lineTo(drawHistory[i].toX, drawHistory[i].toY);
-		// 		context.stroke();
-		// 		context.closePath();
-	 //  	}
-	 //  })
-
-
-		// //actionlisteners
-		// $('canvas').mousedown(function(e) {
-		// 	fromX = e.pageX
-		// 	fromY = e.pageY
-		// });
-		// $('canvas').mousemove(function(e) {
-		// 	if (fromX) {
-		// 		toX = e.pageX
-		// 		toY = e.pageY
-		// 		var data = {
-		// 			fromX:fromX,
-		// 			fromY:fromY,
-		// 			toX: toX,
-		// 			toY: toY	
-		// 		};
-		//   	context.beginPath();
-		// 		context.moveTo(data.fromX, data.fromY);
-		// 		context.lineTo(data.toX, data.toY);
-		// 		context.stroke();
-		// 		context.closePath();
-
-		// 		socket.emit('draw', data)
-		// 		fromX = toX
-		// 		fromY = toY
-		// 	}
-		// });
+			$('#menu').width(window.innerWidth);
+		});
   });
 </script>
 </head>
 <body>
+
+	<div id="menu">
+		<div id="menu-options">
+			<label for="color-picker">color:</label>
+			<input type="text" id="color-picker"></input>
+			<label for="size-picker">brush size:</label>
+			<input type="number" step="1" value="1" min="0" id="size-picker"></input>
+		</div>
+	</div>
 	<div id="viewport"></div>
 </body>
 </html>

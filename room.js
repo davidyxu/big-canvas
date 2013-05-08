@@ -21,14 +21,15 @@ function Room(x, y, offsetX, offsetY) {
 
 	socket.emit('subscribe', this.roomID);
 
-	this.context.strokeStyle = "red";
-	this.context.lineWidth = 1.0;
-	this.context.lineJoin = "round";
+	this.loadStyle(BC.style);
+
 	$('#viewport').append(this.$container);
 
 }
 
 Room.prototype.drawLine = function(data) {
+	this.loadStyle(BC.style);
+
   this.context.beginPath();
   this.context.moveTo(data.fromX - this.offsetX, data.fromY - this.offsetY);
   this.context.lineTo(data.toX - this.offsetX, data.toY - this.offsetY);
@@ -47,7 +48,24 @@ Room.prototype.loadURL = function(url) {
 		img.src = url;
 }
 
-Room.prototype.drawHistory = function(history) {
+Room.prototype.loadStyle = function(style) {
+	console.log(style)
+	if (this.context.strokeStyle != style.color) {
+		this.context.strokeStyle = style.color;
+	}
+	if (this.context.lineWidth != style.width) {
+		this.context.lineWidth = style.width;
+	}
+	if (this.context.lineCap != style.lineCap) {
+		this.context.lineCap = style.lineCap;
+	}
+	if (this.context.lineJoin != style.lineJoin) {
+		this.context.lineJoin = style.lineJoin;
+	}
+}
+
+Room.prototype.drawHistory = function(style, history) {
+	this.loadStyle(style);
 	for (var i = 0; i < history.length; i++) {
 	  this.context.beginPath();
 	  this.context.moveTo(history[i].fromX - this.offsetX, history[i].fromY - this.offsetY);
@@ -65,7 +83,7 @@ Room.prototype.remove = function() {
 
 Room.prototype.sendData = function() {
 	if (this.history.length > 0) {
-		socket.emit('drawHistory', this.roomID, this.history);
+		socket.emit('drawHistory', this.roomID, BC.style, this.history);
 		this.history = [];
 	}
 }
