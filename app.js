@@ -87,7 +87,9 @@ io.sockets.on('connection', function(socket) {
 	})
 
 	socket.on('drawHistory', function(roomID, history) {
-		activeRooms[roomID].drawHistory(history);
+		if (activeRooms[roomID]) {
+			activeRooms[roomID].drawHistory(history);
+		}
 		socket.broadcast.to(roomID).emit('updatecanvas', roomID, history);		
 	})
 
