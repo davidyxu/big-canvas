@@ -13,7 +13,7 @@ server = new Server('linus.mongohq.com', '10045', {auto_reconnect: true});
 DBCon = new Db('app15526437', server, {safe: false});
 DBCon.open(function(err, db) {
   if(!err) {
-    db.authenticate('heroku', 'testtest', function(err){
+    db.authenticate(process.env.DB_ACCOUNT, process.env.DB_PASSWORD, function(err){
       if(!err) con = db;
       collection = new mongo.Collection(con, "canvasURI");
     })
