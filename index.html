@@ -2,7 +2,10 @@
 <head>
 <link rel="stylesheet" type="text/css" href="https://s3.amazonaws.com/big-canvas/assets/css/big-canvas.css">
 <script src="/socket.io/socket.io.js"></script>
+
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+
+<script src="https://s3.amazonaws.com/big-canvas/assets/js/room.js"></script>
 <script src="https://s3.amazonaws.com/big-canvas/assets/js/big-canvas.js"></script>
 <script>
 	var socket = io.connect(window.location.hostname);
@@ -24,6 +27,12 @@
 
 		room.drawHistory(history);
 	})
+
+	socket.on('loadhistory', function(roomID, url) {
+		var parsedID = roomID.slice(1).split('y');
+		var room = BC.findRoom(parseInt(parsedID[0]), parseInt(parsedID[1]))
+		room.loadURL(url);
+	});
 
   $(function() {
 

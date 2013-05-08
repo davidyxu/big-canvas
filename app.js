@@ -1,10 +1,33 @@
 var Canvas = require('canvas')
-  , canvas = new Canvas(1000, 1000)
-  , context = canvas.getContext('2d')
-  , fs = require('fs');
 
+fs = require('fs');
+dimension = 1000;
 
-var drawHistory = [];
+function Room(x, y){
+	this.x = x;
+	this.y = y;
+	this.history = [];
+
+	this.offsetX = x*dimension;
+	this.offsetY = y*dimension;
+	this.canvas = new Canvas(dimension, dimension);
+	this.context = this.canvas.getContext('2d');
+	console.log(this.context);
+	this.context.strokeStyle = "red";
+	this.context.lineWidth = 1.0;
+	this.context.lineJoin = "round";	
+}
+
+Room.prototype.drawHistory = function(history) {
+
+	for (var i = 0; i < history.length; i++) {
+	  this.context.beginPath();
+	  this.context.moveTo(history[i].fromX - this.offsetX, history[i].fromY - this.offsetY);
+	  this.context.lineTo(history[i].toX - this.offsetX, history[i].toY - this.offsetY);
+	  this.context.stroke();
+	  this.context.closePath();
+	}
+}
 
 var activeRooms = {};
 
@@ -40,23 +63,37 @@ io.sockets.on('connection', function(socket) {
 
 	//socket.emit('drawBoard', canvas.toDataURL());
 
-	socket.on('subscribe', function(data) {
-		socket.join(data);
+	socket.on('subscribe', function(roomID) {
+		socket.join(roomID);
 		socket.emit('test', "joining");
-		
+
+		if (io.sockets.clients(roomID).length === 1) {
+			var parsedID = roomID.slice(1).split('y');
+			// add a load from db info
+			activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
+		} else {
+			socket.emit('loadhistory', roomID, activeRooms[roomID].canvas.toDataURL());
+			//socket.emit()
+		}
 	})
-	socket.on('unsubscribe', function(data) {
-		socket.leave(data);
+	socket.on('unsubscribe', function(roomID) {
+		socket.leave(roomID);
 		socket.emit('test', "leaving");
+
+		if (io.sockets.clients(roomID).length === 0) {
+			// persist data to database
+			delete activeRooms[roomID];
+		}
 	})
 
-	socket.on('drawHistory', function(roomID, data) {
-		socket.broadcast.to(roomID).emit('updatecanvas', roomID, data);		
+	socket.on('drawHistory', function(roomID, history) {
+		activeRooms[roomID].drawHistory(history);
+		socket.broadcast.to(roomID).emit('updatecanvas', roomID, history);		
 	})
 
 	//maintain serverside rooms
 	socket.on('draw', function(roomID, data) {
-
+		// activeRooms[roomID].drawLine(data);
 		//keep server-side canvas on 
 		// context.beginPath();
 		// context.moveTo(data.fromX, data.fromY);

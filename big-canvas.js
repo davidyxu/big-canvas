@@ -2,6 +2,7 @@ dimension = 1000;
 
 
 BC = {
+	rightClick: false,
 	moveX: 0,
 	moveY: 0,
 	offsetX: 0,
@@ -72,53 +73,84 @@ BC = {
 		}
 	},
 
-	installMouseListeners: function() {
+
+	drawLine: function() {
+		data = {
+			fromX:BC.fromX,
+			fromY:BC.fromY,
+			toX: BC.toX,
+			toY: BC.toY	
+		};
+
+		console.log("Context")
+		var lineStartRoom = BC.findRoom(Math.floor(BC.fromX/dimension), Math.floor(BC.fromY/dimension));
+		
+		lineStartRoom.drawLine(data);
+
+		if (Math.floor(BC.fromX/dimension) != Math.floor(BC.toX/dimension) || Math.floor(BC.fromY/dimension) != Math.floor(BC.toY/dimension)) {
+			var lineEndRoom = BC.findRoom(Math.floor(BC.toX/dimension), Math.floor(BC.toY/dimension));
+			lineEndRoom.drawLine(data);
+
+			var halfX = Math.floor((BC.fromX+(BC.toX-BC.fromX)/2)/dimension)
+			var halfY = Math.floor((BC.fromY+(BC.toY-BC.fromY)/2)/dimension)
+			// if (Math.floor(halfX/dimension) != Math.floor(BC.fromX/dimension) || Math.floor(halfX/dimension) != Math.floor(BC.toX/dimension)) {
+			// 	if (Math.floor(halfY/dimension) != Math.floor(BC.fromY/dimension) || Math.floor(halfY/dimension) != Math.floor(BC.toY/dimension)) {
+			// 		var lineMidRoom = BC.findRoom(Math.floor(halfX/dimension), Math.floor(halfY/dimension));
+			// 		lineMidRoom.drawLine(data);	
+			// 		console.log("HELPING")			
+			// 	}
+			// }
+		}
+		console.log(data);
+
+		BC.fromX = BC.toX
+		BC.fromY = BC.toY
+	},
+
+	installMouseListeners: function() {		
+		document.oncontextmenu = function() {return false};
+
 		$('#viewport').mousedown(function(e) {
-			BC.fromX = e.pageX + BC.offsetX
-			BC.fromY = e.pageY + BC.offsetY
+			if (e.which === 3 || e.button === 2) {
+				BC.rightClick = true;
+			}
+
+			BC.fromX = e.pageX + BC.offsetX;
+			BC.fromY = e.pageY + BC.offsetY;
 		});
 		$('#viewport').mousemove(function(e) {
 			if (BC.fromX) {
-				BC.toX = e.pageX + BC.offsetX
-				BC.toY = e.pageY + BC.offsetY
-				data = {
-					fromX:BC.fromX,
-					fromY:BC.fromY,
-					toX: BC.toX,
-					toY: BC.toY	
-				};
-
-				console.log("Context")
-				var lineStartRoom = BC.findRoom(Math.floor(BC.fromX/dimension), Math.floor(BC.fromY/dimension));
+				BC.toX = e.pageX + BC.offsetX;
+				BC.toY = e.pageY + BC.offsetY;
 				
-				lineStartRoom.drawLine(data);
+				if (BC.rightClick) {
+					var shiftLeft = BC.fromX - BC.toX;
+					var shiftTop = BC.fromY - BC.toY;
+					BC.offsetX += shiftLeft;
+					BC.offsetY += shiftTop;
+					$('.canvas-container').css('top', function(i, v) {
+				    return (parseFloat(v) - shiftTop) + 'px';
+					});
 
-				if (Math.floor(BC.fromX/dimension) != Math.floor(BC.toX/dimension) || Math.floor(BC.fromY/dimension) != Math.floor(BC.toY/dimension)) {
-					var lineEndRoom = BC.findRoom(Math.floor(BC.toX/dimension), Math.floor(BC.toY/dimension));
-					lineEndRoom.drawLine(data);
-
-					var halfX = Math.floor((BC.fromX+(BC.toX-BC.fromX)/2)/dimension)
-					var halfY = Math.floor((BC.fromY+(BC.toY-BC.fromY)/2)/dimension)
-					// if (Math.floor(halfX/dimension) != Math.floor(BC.fromX/dimension) || Math.floor(halfX/dimension) != Math.floor(BC.toX/dimension)) {
-					// 	if (Math.floor(halfY/dimension) != Math.floor(BC.fromY/dimension) || Math.floor(halfY/dimension) != Math.floor(BC.toY/dimension)) {
-					// 		var lineMidRoom = BC.findRoom(Math.floor(halfX/dimension), Math.floor(halfY/dimension));
-					// 		lineMidRoom.drawLine(data);	
-					// 		console.log("HELPING")			
-					// 	}
-					// }
+					$('.canvas-container').css('left', function(i, v) {
+				    return (parseFloat(v) - shiftLeft) + 'px';
+					});
+					
+					BC.updateRooms();
+				} else {
+					BC.drawLine();
 				}
-				console.log(data);
-
-				BC.fromX = BC.toX
-				BC.fromY = BC.toY
 			}
 		});
 		$('#viewport').mouseup(function(e) {
+			if (BC.rightClick) {
+				BC.rightClick = false;
+			}
 			if (BC.fromX) {
 				BC.fromX = null;
 				BC.fromY = null;
 			}
-		})
+		});
 	},
 
 	findRoom: function(x, y) {
@@ -132,8 +164,6 @@ BC = {
 	},
 
 	installKeyListeners: function() {
-
-
 		$(document).keyup(function(e) {
 			var pressedKey = e.which
 			if (pressedKey === 37 || pressedKey === 39) {
@@ -242,64 +272,3 @@ BC = {
 		BC.rooms = newRooms;
  	}
 };
-
-function Room(x, y, offsetX, offsetY) {
-	this.x = x;
-	this.y = y;
-	this.history = [];
-	this.offsetX = x*dimension;
-	this.offsetY = y*dimension;
-	this.$container = $('<div></div>').addClass('canvas-container');
-
-	this.roomID = 'x' + x + 'y' + y;
-	socket.emit('subscribe', this.roomID);
-
-	this.$container.attr('id', this.roomID);
-	this.$container.css('left', x*dimension-offsetX).css('top', y*dimension-offsetY);
-	this.$canvas = $('<canvas>').addClass('sketchpad');
-
-	this.$canvas.width(dimension).height(dimension);
-	this.$canvas[0].width = dimension;
-	this.$canvas[0].height = dimension;
-
-	this.$container.html(this.$canvas);
-	this.context = this.$canvas[0].getContext("2d");
-
-	this.context.strokeStyle = "red";
-	this.context.lineWidth = 1.0;
-	this.context.lineJoin = "round";
-	$('#viewport').append(this.$container);
-}
-
-Room.prototype.drawLine = function(data) {
-  this.context.beginPath();
-  this.context.moveTo(data.fromX - this.offsetX, data.fromY - this.offsetY);
-  this.context.lineTo(data.toX - this.offsetX, data.toY - this.offsetY);
-  this.context.stroke();
-  this.context.closePath();
-
-  this.history.push(data);
-},
-
-Room.prototype.drawHistory = function(history) {
-	for (var i = 0; i < history.length; i++) {
-	  this.context.beginPath();
-	  this.context.moveTo(history[i].fromX - this.offsetX, history[i].fromY - this.offsetY);
-	  this.context.lineTo(history[i].toX - this.offsetX, history[i].toY - this.offsetY);
-	  this.context.stroke();
-	  this.context.closePath();
-	}
-}
-
-Room.prototype.remove = function() {
-	socket.emit('unsubscribe', this.roomID);
-	this.$container.remove();
-	// submit data
-}
-
-Room.prototype.sendData = function() {
-	if (this.history.length > 0) {
-		socket.emit('drawHistory', this.roomID, this.history);
-		this.history = [];
-	}
-}
