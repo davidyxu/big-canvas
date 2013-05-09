@@ -11,10 +11,11 @@ BC = {
 	fromY: null,
 	style: {
 		color: "#000000",
-		width: 1.0,
+		width: 5.0,
 		lineCap: "round",
 		lineJoin: "round"
 	},
+	stroke: [],
 	rooms: [],
 
 	initialize: function(x, y) {
@@ -25,24 +26,39 @@ BC = {
 
 		BC.installKeyListeners();
 		BC.installMouseListeners();
+		BC.installOverlay();
 
 		//BC.installSocketListeners();
-
 		BC.run();
+	},
+
+	installOverlay: function() {
+		this.$canvas = $('<canvas>');
+		$('#overlay').append(this.$canvas);
+		this.context = this.$canvas[0].getContext('2d');
+		this.$canvas.width($(window).width()).height($(window).height());
+
+		this.$canvas[0].width = $(window).width();
+		this.$canvas[0].height = $(window).height();
+
+		this.context.strokeStyle = this.style.color;
+		this.context.lineWidth = this.style.width;
+		this.context.lineCap = this.style.lineCap;
+		this.context.lineJoin = this.style.lineJoin;
 	},
 
 	initializeRooms: function(x, y) {
 		BC.rooms.push(new Room(x, y, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x-1, y, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x+1, y, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x, y-1, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x-1, y-1, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x+1, y-1, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x, y+1, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x-1, y+1, BC.offsetX, BC.offsetY));
-		BC.rooms.push(new Room(x+1, y+1, BC.offsetX, BC.offsetY));
+		for (var shiftX = -1; shiftX <= 1; shiftX++) {
+			for (var shiftY = -1; shiftY <= 1; shiftY++) {
+				if (shiftX === 0 && shiftY === 0) {
+					continue;
+				}
+				BC.rooms.push(new Room(x + shiftX, y + shiftY, BC.offsetX, BC.offsetY));
+			}
+		}
 	},
-
+//remove this and keylistener later
 	run: function() {
 		BC.move();
 		for (var i = 0; i < BC.rooms.length; i++) {
@@ -79,6 +95,82 @@ BC = {
 		}
 	},
 
+// pass in context and throw into helper library
+	setOverlayStyle: function() {
+		if (this.context.strokeStyle != this.style.color) {
+			this.context.strokeStyle = this.style.color;
+		}
+		if (this.context.lineWidth != this.style.width) {
+			this.context.lineWidth = this.style.width;
+		}
+		if (this.context.lineCap != this.style.lineCap) {
+			this.context.lineCap = this.style.lineCap;
+		}
+		if (this.context.lineJoin != this.style.lineJoin) {
+			this.context.lineJoin = this.style.lineJoin;
+		}
+	},
+
+	startStroke: function(startX, startY) {
+		this.setOverlayStyle();
+
+		this.context.beginPath();
+		this.context.moveTo(startX-BC.offsetX, startY-BC.offsetY);
+		this.stroke = [{x: startX, y: startY}];
+	},
+
+	drawStroke: function(pointX, pointY) {
+		this.context.lineTo(pointX-BC.offsetX, pointY-BC.offsetY);
+
+		this.clearOverlay();
+		this.context.stroke();
+
+		this.stroke.push({x: pointX, y: pointY});
+	},
+
+	endStroke: function(endX, endY) {
+		this.clearOverlay();
+
+		this.stroke.push({x: endX, y: endY});
+		this.processStroke();
+	},
+
+	processStroke: function() {
+		var activeRooms = [BC.findRoom(Math.floor(this.stroke[0].x/dimension), Math.floor(this.stroke[0].y/dimension))];
+		activeRooms[0].startStroke(this.stroke[0].x, this.stroke[0].y);
+
+		for (var i = 1; i < this.stroke.length; i++) {
+			currentRoom = BC.findRoom(Math.floor(this.stroke[i].x/dimension), Math.floor(this.stroke[i].y/dimension));
+
+			var newRoom = true;
+			for (var j = 0; j < activeRooms.length; j++) {
+				console.log(activeRooms[j].roomID)
+				if (activeRooms[j].roomID === currentRoom.roomID) {
+					newRoom = false;
+					break;
+				}
+			}
+			if (newRoom) {
+				activeRooms.push(currentRoom)
+				currentRoom.startStroke(this.stroke[i-1].x, this.stroke[i-1].y);
+			}
+
+			for (var j = 0; j < activeRooms.length; j++) {
+				activeRooms[j].drawStroke(this.stroke[i].x, this.stroke[i].y);
+			}
+
+		}
+
+		for (var j = 0; j < activeRooms.length; j++) {
+			activeRooms[j].endStroke();
+			activeRooms[j].roomID
+		}
+		this.stroke = [];
+	},
+
+	clearOverlay: function() {
+		this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);
+	},
 
 	drawLine: function() {
 		data = {
@@ -121,7 +213,7 @@ BC = {
 				BC.rightClick = true;
 				document.body.style.cursor = 'move';
 			}
-
+			BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 			BC.fromX = e.pageX + BC.offsetX;
 			BC.fromY = e.pageY + BC.offsetY;
 		});
@@ -131,6 +223,7 @@ BC = {
 				BC.toY = e.pageY + BC.offsetY;
 				
 				if (BC.rightClick) {
+					// move to movecanvas function
 					var shiftLeft = BC.fromX - BC.toX;
 					var shiftTop = BC.fromY - BC.toY;
 					BC.offsetX += shiftLeft;
@@ -145,7 +238,8 @@ BC = {
 
 					BC.updateRooms();
 				} else {
-					BC.drawLine();
+					BC.drawStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+					//BC.drawLine();
 				}
 			}
 		});
@@ -157,6 +251,7 @@ BC = {
 			if (BC.fromX) {
 				BC.fromX = null;
 				BC.fromY = null;
+				BC.endStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 			}
 		});
 	},

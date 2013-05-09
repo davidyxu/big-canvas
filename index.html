@@ -13,6 +13,7 @@
 <script type="text/javascript" src="https://s3.amazonaws.com/big-canvas/assets/js/colorpicker.js"></script>
 
 <script>
+// put into another file
 	var socket = io.connect(window.location.hostname);
   socket.on('connect', function(){
     console.log("connected")
@@ -36,7 +37,14 @@
 		room.loadURL(url);
 	});
 
+	socket.on('drawPath', function(roomID, style, history) {
+		var parsedID = roomID.slice(1).split('y');
+		var room = BC.findRoom(parseInt(parsedID[0]), parseInt(parsedID[1]))
+		room.drawPath(style, history);
+	});
+
   $(function() {
+  	// move to interface.js file
   	$('#size-picker').change(function() {
   		BC.style.width = $('#size-picker').val();
   	});
@@ -58,6 +66,7 @@
 				console.log(BC.style.color);
 			}
 	  });	
+	  // move
 		$('#viewport').width(window.innerWidth);
 		$('#viewport').height(window.innerHeight - 30);
 
@@ -75,13 +84,16 @@
 <body>
 
 	<div id="menu">
+
 		<div id="menu-options">
 			<label for="color-picker">color:</label>
 			<input type="text" id="color-picker"></input>
 			<label for="size-picker">brush size:</label>
-			<input type="number" step="1" value="1" min="0" id="size-picker"></input>
+			<input type="number" step="1" value="5" min="0" id="size-picker"></input>
 		</div>
 	</div>
-	<div id="viewport"></div>
+	<div id="viewport">
+		<div id="overlay"></div>
+	</div>
 </body>
 </html>

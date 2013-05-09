@@ -23,8 +23,30 @@ function Room(x, y, offsetX, offsetY) {
 
 	this.loadStyle(BC.style);
 
-	$('#viewport').append(this.$container);
+	$('#viewport').prepend(this.$container);
 
+}
+
+Room.prototype.startStroke = function(startX, startY) {
+	this.loadStyle(BC.style);
+	this.context.beginPath();
+	this.context.moveTo(startX - this.offsetX, startY - this.offsetY);
+	this.history.push({x: startX, y: startY})
+}
+
+Room.prototype.drawStroke = function(pointX, pointY) {
+	this.context.lineTo(pointX - this.offsetX, pointY - this.offsetY);
+	this.history.push({x: pointX, y: pointY})
+}
+
+Room.prototype.endStroke = function() {
+	this.context.stroke();
+	this.context.closePath();
+	console.log("path closed")
+	// emit drawline;
+	socket.emit('drawPath', this.roomID, BC.style, this.history);
+	console.log(this.history)
+	this.history = [];
 }
 
 Room.prototype.drawLine = function(data) {
@@ -35,8 +57,18 @@ Room.prototype.drawLine = function(data) {
   this.context.lineTo(data.toX - this.offsetX, data.toY - this.offsetY);
   this.context.stroke();
   this.context.closePath();
+}
 
-  this.history.push(data);
+Room.prototype.drawPath = function(style, data) {
+	this.loadStyle(style);
+
+	this.context.beginPath();
+	this.context.moveTo(data[0].x - this.offsetX, data[0].y - this.offsetY)
+	for (var i = 1; i < data.length; i++) {
+		this.context.lineTo(data[i].x - this.offsetX, data[i].y - this.offsetY)
+	}
+	this.context.stroke();
+	this.context.closePath();
 }
 
 Room.prototype.loadURL = function(url) {

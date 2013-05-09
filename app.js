@@ -64,6 +64,18 @@ Room.prototype.drawHistory = function(style, history) {
 		}
 	}
 }
+Room.prototype.drawPath = function(style, data) {
+	this.loadStyle(style);
+
+	console.log(data);
+	this.context.beginPath();
+	this.context.moveTo(data[0].x- this.offsetX, data[0].y- this.offsetY)
+	for (var i = 1; i < data.length; i++) {
+		this.context.lineTo(data[i].x - this.offsetX, data[i].y - this.offsetY)
+	}
+	this.context.stroke();
+	this.context.closePath();
+}
 
 Room.prototype.loadURI = function(uri) {
 		var img = new Image;
@@ -115,14 +127,10 @@ io.sockets.on('connection', function(socket) {
 				if (err) {
 					console.log(err);
 				} else if (docs) {
-					console.log("====");
-					console.log(roomID);
-					console.log("====");
 					activeRooms[roomID].loadURI(docs.uri);
 					socket.emit('loadhistory', roomID, docs.uri);	
 				}
 			});
-			//socket.emit()
 		}
 
 		for (var name in activeRooms) {
@@ -131,10 +139,6 @@ io.sockets.on('connection', function(socket) {
 	})
 	socket.on('unsubscribe', function(roomID) {
 		socket.leave(roomID);
-		socket.emit('test', "leaving");
-		console.log("===========");
-		console.log(roomID)
-		console.log("===========");
 		if (io.sockets.clients(roomID).length === 0) {
 			
 			collection.update({roomID: roomID}, {$set: {uri: activeRooms[roomID].canvas.toDataURL()}}, {safe: true, upsert: true}, function(err, object) {
@@ -148,12 +152,28 @@ io.sockets.on('connection', function(socket) {
 			// persist data to database
 		}
 	})
-
+	socket.on('drawPath', function(roomID, style, history) {
+		if (!activeRooms[roomID]) {
+			var parsedID = roomID.slice(1).split('y');
+			activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
+			// load uri from db if available
+			collection.find({roomID: roomID}).nextObject(function(err,docs) {
+				if (err) {
+					console.log(err);
+				} else if (docs) {
+					activeRooms[roomID].loadURI(docs.uri);
+					socket.emit('loadhistory', roomID, docs.uri);	
+				}
+			});
+		}
+		activeRooms[roomID].drawPath(style, history);
+		socket.broadcast.to(roomID).emit('drawPath', roomID, style, history)
+	})
 	socket.on('drawHistory', function(roomID, style, history) {
 		if (activeRooms[roomID]) {
 			activeRooms[roomID].drawHistory(style, history);
 		}
-		socket.broadcast.to(roomID).emit('updatecanvas', roomID, style, history);		
+		io.sockets.broadcast.to(roomID).emit('updatecanvas', roomID, style, history);		
 	})
 
 	//maintain serverside rooms
