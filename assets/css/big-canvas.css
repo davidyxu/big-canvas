@@ -48,6 +48,19 @@ html, body {
 	height: 29px;
 	z-index: 2;
 }
+
+.option {
+	margin-left: 5px;
+	margin-right: 20px;
+	float: left;
+	display: inline;
+}
+.instructions {
+	display: inline;
+	margin-right: 5px;
+	float: right;
+}
+
 #menu-options {
   margin: 2px;
 }

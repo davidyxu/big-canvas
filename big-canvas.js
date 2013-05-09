@@ -4,8 +4,10 @@ dimension = 1000;
 BC = {
 	rightClick: false,
 	leftClick: false,
+	modifier: false,
 	offsetX: 0,
 	offsetY: 0,
+	colorHolder: null,
 	style: {
 		color: "#000000",
 		width: 5.0,
@@ -20,7 +22,6 @@ BC = {
 		BC.offsetY = dimension * y;
 
 		BC.initializeRooms(x, y);
-
 		BC.installKeyListeners();
 		BC.installMouseListeners();
 		BC.installOverlay();
@@ -139,10 +140,40 @@ BC = {
 		});
 	},
 
+	installKeyListeners: function() {
+		$(document).keydown(function(e) {
+			if (BC.modifier != e.which && !BC.colorHolder) {
+				BC.modifier = e.which;
+			}
+		});
+		$(document).keypress(function(e) {
+			switch (e.which) {
+				case 98:
+				$('#brush-picker').focus();
+				return false;
+					break;
+				case 99:
+				$('.sp-replacer').trigger('click');
+					break;
+				case 115:
+				$('#size-picker').focus();
+				return false;
+					break;
+			}
+		})
+		$(document).keyup(function(e) {
+			console.log(BC.modifier);
+			BC.modifier = false;
+		});
+	},
+
 	installMouseListeners: function() {		
 		document.oncontextmenu = function() {return false};
 
 		$('#viewport').mousedown(function(e) {
+			if ($('#size-picker').is(':focus')) {
+				$('#size-picker').blur();
+			}
 			if (e.which === 3 || e.button === 2) {
 				BC.fromX = e.pageX + BC.offsetX;
 				BC.fromY = e.pageY + BC.offsetY;
@@ -150,8 +181,16 @@ BC = {
 				document.body.style.cursor = 'move';
 			} else {
 				BC.leftClick = true;
+				document.body.style.cursor = 'crosshair';
+				if (BC.modifier === 17) {
+					BC.colorHolder = BC.style.color;
+					BC.style.color = "#FFFFFF";
+					console.log(BC.style.color);
+					console.log(BC.colorHolder);
+				}
 				BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 			}
+			return false;
 		});
 
 		$('#viewport').mousemove(function(e) {
@@ -168,11 +207,15 @@ BC = {
 			if (BC.rightClick) {
 				BC.rightClick = false;
 				BC.updateRooms();
-				document.body.style.cursor = 'default';
 			} else if (BC.leftClick) {
 				BC.leftClick = false;
 				BC.endStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+				if (BC.colorHolder) {
+					BC.style.color = BC.colorHolder;
+					BC.colorHolder = null;
+				}
 			}
+			document.body.style.cursor = 'default';
 		});
 	},
 
@@ -183,21 +226,6 @@ BC = {
 			}
 		}
 		return false;
-	},
-
-	installKeyListeners: function() {
-		// $(document).keypress(function(e) {
-		// 	switch (e.which) {
-		// 		case 98:
-		// 			$('#colorpicker').show();
-		// 		break;
-
-		// 		case 115:
-		// 			$('#size-picker').closest('input').focus();
-		// 		break;
-		// 	}
-		// 	return false;
-		// });
 	},
 
 	updateRooms: function() {

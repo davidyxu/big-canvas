@@ -7,7 +7,9 @@ mongo = require('mongodb')
 Server = mongo.Server
 Db = mongo.Db
 BSON = mongo.BSONPure;
+
 con = null;
+connection = null;
 
 server = new Server('linus.mongohq.com', '10045', {auto_reconnect: true});
 DBCon = new Db('app15526437', server, {safe: false});
@@ -77,7 +79,8 @@ Room.prototype.loadURI = function(uri) {
 }
 
 var activeRooms = {};
-
+var startX = 0;
+var startY = 0;
 
 //Node Server
 var express = require('express')
@@ -102,7 +105,7 @@ startApp = function() {
 	});
 
 	io.sockets.on('connection', function(socket) {
-		socket.emit('start', 0, 0); // how to decide best spot to start
+		socket.emit('start', startX, startY); // how to decide best spot to start
 
 		socket.on('subscribe', function(roomID) {
 			socket.join(roomID);
@@ -112,21 +115,7 @@ startApp = function() {
 				socket.emit('loadhistory', roomID, activeRooms[roomID].canvas.toDataURL());
 			// if instance of room already available, send it
 			} else {
-				var parsedID = roomID.slice(1).split('y');
-				activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
-				// load uri from db if available
-				collection.find({roomID: roomID}).nextObject(function(err,docs) {
-					if (err) {
-						console.log(err);
-					} else if (docs) {
-						activeRooms[roomID].loadURI(docs.uri);
-						socket.emit('loadhistory', roomID, docs.uri);	
-					}
-				});
-			}
-
-			for (var name in activeRooms) {
-			  console.log(name);
+				loadRoom(socket, roomID);
 			}
 		})
 
@@ -136,25 +125,33 @@ startApp = function() {
 
 		socket.on('drawPath', function(roomID, style, history) {
 			if (!activeRooms[roomID]) {
-				var parsedID = roomID.slice(1).split('y');
-				activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
-				// load uri from db if available
-				collection.find({roomID: roomID}).nextObject(function(err,docs) {
-					if (err) {
-						console.log(err);
-					} else if (docs) {
-						activeRooms[roomID].loadURI(docs.uri);
-						socket.emit('loadhistory', roomID, docs.uri);	
-					}
-				});
+				loadRoom(roomID);
 			}
 			activeRooms[roomID].drawPath(style, history);
+
+			var parsedID = roomID.slice(1).split('y');
+			startX = parseInt(parsedID[0]);
+			startY = parseInt(parsedID[1]);
+
 			socket.broadcast.to(roomID).emit('drawPath', roomID, style, history)
 		})
 	});
-	setInterval(updateActiveRooms, 60000);
+	setInterval(updateActiveRooms, 200000);
 }
 
+loadRoom = function(socket, roomID) {
+	var parsedID = roomID.slice(1).split('y');
+	activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
+	// load uri from db if available
+	collection.find({roomID: roomID}).nextObject(function(err,docs) {
+		if (err) {
+			console.log(err);
+		} else if (docs) {
+			activeRooms[roomID].loadURI(docs.uri);
+			socket.emit('loadhistory', roomID, docs.uri);	
+		}
+	});
+}
 
 updateActiveRooms = function() {
 	for (var roomID in activeRooms) {

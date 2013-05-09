@@ -71,26 +71,7 @@ Room.prototype.loadURI = function(uri) {
 		img.src = uri;
 }
 
-Room.prototype.drawHistory = function(style, history) {
-	Helper.loadStyle(this.context, style);
-
-	for (var i = 0; i < history.length; i++) {
-	  this.context.beginPath();
-	  this.context.moveTo(history[i].fromX - this.offsetX, history[i].fromY - this.offsetY);
-	  this.context.lineTo(history[i].toX - this.offsetX, history[i].toY - this.offsetY);
-	  this.context.stroke();
-	  this.context.closePath();
-	}
-}
-
 Room.prototype.remove = function() {
 	socket.emit('unsubscribe', this.roomID);
 	this.$container.remove();
-}
-
-Room.prototype.sendData = function() {
-	if (this.history.length > 0) {
-		socket.emit('drawHistory', this.roomID, BC.style, this.history);
-		this.history = [];
-	}
 }

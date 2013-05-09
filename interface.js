@@ -5,6 +5,14 @@ $(function() {
 
 	$('#size-picker').keypress(Helper.setSize);
 
+	$('#color-label').mouseup(function() {
+		if ($('.sp-active').length === 0) {
+			window.setTimeout(function() {
+				$('.sp-replacer').trigger('click')
+			}, 10);		
+		}
+	});
+
 	$('#brush-picker').change(function() {
 		BC.style.lineCap = $('#brush-picker').val();
 		if (BC.style.lineCap === "round") {
@@ -20,9 +28,9 @@ $(function() {
     showInitial: true,
     showInput: true,
     showButtons: false,
+    preferredFormat: "hex6",
     palette: [['black', 'gray', 'white']],
     localStorageKey: "big.canvas",
-    clickoutFiresChange: true,
     move: function(color) {
     	BC.style.color = color.toRgbString();
     }

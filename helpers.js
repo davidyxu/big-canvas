@@ -15,6 +15,11 @@ Helper = {
         return true;
     }
     else if ( key < 48 || key > 57 ) {
+    	if (key === 99) {
+				$('.sp-replacer').trigger('click');
+    	} else if (key === 98) {
+				$('#brush-picker').focus();
+    	}
       return false;
     }
     else {

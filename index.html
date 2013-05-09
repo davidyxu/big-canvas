@@ -27,18 +27,24 @@ $(function() {
 	<div id="menu">
 
 		<div id="menu-options">
-			<label for="color-picker">color:</label>
-			<input type="text" id="color-picker"></input>
-
-			<label for="size-picker"><u>s</u>ize:</label>
-			<input type="number" step="1" value="5" min="0" id="size-picker"></input>
-
-			<label for="size-picker"><u>b</u>rush:</label>
-			<select id="brush-picker">
-				<option value="round">round</option>
-				<option value="square">square</option>
-			</select>
-			right-click drag to move
+			<div class="option">
+				<label id="color-label"><u>c</u>olor:</label>
+				<input type="text" id="color-picker"></input>
+			</div>
+			<div class="option">
+				<label for="size-picker"><u>s</u>ize:</label>
+				<input type="number" step="1" value="5" min="0" id="size-picker"></input>
+			</div>
+			<div class="option">
+				<label for="brush-picker"><u>b</u>rush:</label>
+				<select id="brush-picker">
+					<option value="round">round</option>
+					<option value="square">square</option>
+				</select>
+			</div>
+			<div class="instructions">
+				right-click drag to move, hold ctrl to erase
+			</div>
 		</div>
 	</div>
 	<div id="viewport">
