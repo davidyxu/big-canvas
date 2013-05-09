@@ -14,11 +14,15 @@ DBCon = new Db('app15526437', server, {safe: false});
 DBCon.open(function(err, db) {
   if(!err) {
     db.authenticate(process.env.DB_ACCOUNT, process.env.DB_PASSWORD, function(err){
-      if(!err) con = db;
-      collection = new mongo.Collection(con, "canvasURI");
+      if(!err) {
+      	con = db;
+				collection = new mongo.Collection(con, "canvasURI");
+				startApp();
+	    }
     })
   }
 });
+
 
 //Data Structure for Rooms
 function Room(x, y){
@@ -26,16 +30,15 @@ function Room(x, y){
 	this.y = y;
 	this.history = [];
 
-	this.lastUpdated = (new Date).getTime();
-
 	this.offsetX = x*dimension;
 	this.offsetY = y*dimension;
-
+	this.updated = false;
 	this.canvas = new Canvas(dimension, dimension);
 	this.context = this.canvas.getContext('2d');	
 }
 
 Room.prototype.loadStyle = function(style) {
+
 	if (this.context.strokeStyle != style.color) {
 		this.context.strokeStyle = style.color;
 	}
@@ -49,21 +52,7 @@ Room.prototype.loadStyle = function(style) {
 		this.context.lineJoin = style.lineJoin;
 	}
 }
-Room.prototype.drawHistory = function(style, history) {
-	this.loadStyle(style);
-	if (history.length === 0) {
-		return false;
-	} else {
-		this.lastUpdated =(new Date).getTime();
-		for (var i = 0; i < history.length; i++) {
-		  this.context.beginPath();
-		  this.context.moveTo(history[i].fromX - this.offsetX, history[i].fromY - this.offsetY);
-		  this.context.lineTo(history[i].toX - this.offsetX, history[i].toY - this.offsetY);
-		  this.context.stroke();
-		  this.context.closePath();
-		}
-	}
-}
+
 Room.prototype.drawPath = function(style, data) {
 	this.loadStyle(style);
 
@@ -75,6 +64,7 @@ Room.prototype.drawPath = function(style, data) {
 	}
 	this.context.stroke();
 	this.context.closePath();
+	this.updated = true;
 }
 
 Room.prototype.loadURI = function(uri) {
@@ -98,97 +88,87 @@ var express = require('express')
 
 var port = process.env.PORT || 5000;
 
-server.listen(port);
+startApp = function() {
+	server.listen(port);
 
-// routing
-app.get('/', function (req, res) {
-  res.sendfile(__dirname + '/index.html');
-});
+	// routing
+	app.get('/', function (req, res) {
+	  res.sendfile(__dirname + '/index.html');
+	});
 
-io.configure(function () { 
-  io.set("transports", ["xhr-polling"]); 
-  io.set("polling duration", 10); 
-});
+	io.configure(function () { 
+	  io.set("transports", ["xhr-polling"]); 
+	  io.set("polling duration", 10); 
+	});
 
-io.sockets.on('connection', function(socket) {
-	socket.emit('start', 0, 0); // how to decide best spot to start
-	socket.on('subscribe', function(roomID) {
-		socket.join(roomID);
+	io.sockets.on('connection', function(socket) {
+		socket.emit('start', 0, 0); // how to decide best spot to start
 
-		// if this is the first person accessing this room
-		if (activeRooms[roomID]) {
-			socket.emit('loadhistory', roomID, activeRooms[roomID].canvas.toDataURL());
-		// if instance of room already available, send it
-		} else {
-			var parsedID = roomID.slice(1).split('y');
-			activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
-			// load uri from db if available
-			collection.find({roomID: roomID}).nextObject(function(err,docs) {
-				if (err) {
-					console.log(err);
-				} else if (docs) {
-					activeRooms[roomID].loadURI(docs.uri);
-					socket.emit('loadhistory', roomID, docs.uri);	
-				}
-			});
-		}
+		socket.on('subscribe', function(roomID) {
+			socket.join(roomID);
 
-		for (var name in activeRooms) {
-		  console.log(name);
-		}
-	})
-	socket.on('unsubscribe', function(roomID) {
-		socket.leave(roomID);
-		if (io.sockets.clients(roomID).length === 0) {
-			
+			// if this is the first person accessing this room
+			if (activeRooms[roomID]) {
+				socket.emit('loadhistory', roomID, activeRooms[roomID].canvas.toDataURL());
+			// if instance of room already available, send it
+			} else {
+				var parsedID = roomID.slice(1).split('y');
+				activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
+				// load uri from db if available
+				collection.find({roomID: roomID}).nextObject(function(err,docs) {
+					if (err) {
+						console.log(err);
+					} else if (docs) {
+						activeRooms[roomID].loadURI(docs.uri);
+						socket.emit('loadhistory', roomID, docs.uri);	
+					}
+				});
+			}
+
+			for (var name in activeRooms) {
+			  console.log(name);
+			}
+		})
+
+		socket.on('unsubscribe', function(roomID) {
+			socket.leave(roomID);
+		})
+
+		socket.on('drawPath', function(roomID, style, history) {
+			if (!activeRooms[roomID]) {
+				var parsedID = roomID.slice(1).split('y');
+				activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
+				// load uri from db if available
+				collection.find({roomID: roomID}).nextObject(function(err,docs) {
+					if (err) {
+						console.log(err);
+					} else if (docs) {
+						activeRooms[roomID].loadURI(docs.uri);
+						socket.emit('loadhistory', roomID, docs.uri);	
+					}
+				});
+			}
+			activeRooms[roomID].drawPath(style, history);
+			socket.broadcast.to(roomID).emit('drawPath', roomID, style, history)
+		})
+	});
+	setInterval(updateActiveRooms, 60000);
+}
+
+
+updateActiveRooms = function() {
+	for (var roomID in activeRooms) {
+	  if (!activeRooms[roomID].updated) {
 			collection.update({roomID: roomID}, {$set: {uri: activeRooms[roomID].canvas.toDataURL()}}, {safe: true, upsert: true}, function(err, object) {
 				if (err) {
 					console.log(roomID + ": " + err);
 				} else {
 					console.log(roomID + " updated");
+			  	delete activeRooms[roomID];
 				}
-				//delete activeRooms[roomID];
 			})
-			// persist data to database
-		}
-	})
-	socket.on('drawPath', function(roomID, style, history) {
-		if (!activeRooms[roomID]) {
-			var parsedID = roomID.slice(1).split('y');
-			activeRooms[roomID] = new Room(parseInt(parsedID[0]), parseInt(parsedID[1]))
-			// load uri from db if available
-			collection.find({roomID: roomID}).nextObject(function(err,docs) {
-				if (err) {
-					console.log(err);
-				} else if (docs) {
-					activeRooms[roomID].loadURI(docs.uri);
-					socket.emit('loadhistory', roomID, docs.uri);	
-				}
-			});
-		}
-		activeRooms[roomID].drawPath(style, history);
-		socket.broadcast.to(roomID).emit('drawPath', roomID, style, history)
-	})
-	socket.on('drawHistory', function(roomID, style, history) {
-		if (activeRooms[roomID]) {
-			activeRooms[roomID].drawHistory(style, history);
-		}
-		io.sockets.broadcast.to(roomID).emit('updatecanvas', roomID, style, history);		
-	})
-
-	//maintain serverside rooms
-	socket.on('draw', function(roomID, data) {
-		// activeRooms[roomID].drawLine(data);
-		//keep server-side canvas on 
-		// context.beginPath();
-		// context.moveTo(data.fromX, data.fromY);
-		// context.lineTo(data.toX, data.toY);
-		// context.stroke();
-		// context.closePath();
-		
-		// drawHistory.push(data);
-
-		socket.broadcast.to(roomID).emit('updatecanvas', roomID, data);
-	});
-});
-
+	  } else {
+	  	activeRooms[roomID].updated = false;
+	  }
+	}
+}

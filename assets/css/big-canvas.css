@@ -63,3 +63,6 @@ input#color-picker {
 input#size-picker {
   width: 35px;
 }
+input#opacity-picker {
+  width: 35px;
+}

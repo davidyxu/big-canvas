@@ -21,14 +21,15 @@ function Room(x, y, offsetX, offsetY) {
 
 	socket.emit('subscribe', this.roomID);
 
-	this.loadStyle(BC.style);
 
-	$('#viewport').prepend(this.$container);
+	Helper.loadStyle(this.context, BC.style);
+
+	$('#viewport').append(this.$container);
 
 }
 
 Room.prototype.startStroke = function(startX, startY) {
-	this.loadStyle(BC.style);
+	Helper.loadStyle(this.context, BC.style);
 	this.context.beginPath();
 	this.context.moveTo(startX - this.offsetX, startY - this.offsetY);
 	this.history.push({x: startX, y: startY})
@@ -49,18 +50,8 @@ Room.prototype.endStroke = function() {
 	this.history = [];
 }
 
-Room.prototype.drawLine = function(data) {
-	this.loadStyle(BC.style);
-
-  this.context.beginPath();
-  this.context.moveTo(data.fromX - this.offsetX, data.fromY - this.offsetY);
-  this.context.lineTo(data.toX - this.offsetX, data.toY - this.offsetY);
-  this.context.stroke();
-  this.context.closePath();
-}
-
 Room.prototype.drawPath = function(style, data) {
-	this.loadStyle(style);
+	Helper.loadStyle(this.context, style);
 
 	this.context.beginPath();
 	this.context.moveTo(data[0].x - this.offsetX, data[0].y - this.offsetY)
@@ -71,33 +62,18 @@ Room.prototype.drawPath = function(style, data) {
 	this.context.closePath();
 }
 
-Room.prototype.loadURL = function(url) {
+Room.prototype.loadURI = function(uri) {
 		var img = new Image;
 		var that = this;
 		img.onload = function() {
 			that.context.drawImage(img, 0, 0);
 		};
-		img.src = url;
-}
-
-Room.prototype.loadStyle = function(style) {
-	console.log(style)
-	if (this.context.strokeStyle != style.color) {
-		this.context.strokeStyle = style.color;
-	}
-	if (this.context.lineWidth != style.width) {
-		this.context.lineWidth = style.width;
-	}
-	if (this.context.lineCap != style.lineCap) {
-		this.context.lineCap = style.lineCap;
-	}
-	if (this.context.lineJoin != style.lineJoin) {
-		this.context.lineJoin = style.lineJoin;
-	}
+		img.src = uri;
 }
 
 Room.prototype.drawHistory = function(style, history) {
-	this.loadStyle(style);
+	Helper.loadStyle(this.context, style);
+
 	for (var i = 0; i < history.length; i++) {
 	  this.context.beginPath();
 	  this.context.moveTo(history[i].fromX - this.offsetX, history[i].fromY - this.offsetY);
@@ -110,7 +86,6 @@ Room.prototype.drawHistory = function(style, history) {
 Room.prototype.remove = function() {
 	socket.emit('unsubscribe', this.roomID);
 	this.$container.remove();
-	// submit data
 }
 
 Room.prototype.sendData = function() {

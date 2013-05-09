@@ -3,12 +3,9 @@ dimension = 1000;
 
 BC = {
 	rightClick: false,
-	moveX: 0,
-	moveY: 0,
+	leftClick: false,
 	offsetX: 0,
 	offsetY: 0,
-	fromX: null,
-	fromY: null,
 	style: {
 		color: "#000000",
 		width: 5.0,
@@ -27,9 +24,6 @@ BC = {
 		BC.installKeyListeners();
 		BC.installMouseListeners();
 		BC.installOverlay();
-
-		//BC.installSocketListeners();
-		BC.run();
 	},
 
 	installOverlay: function() {
@@ -58,61 +52,9 @@ BC = {
 			}
 		}
 	},
-//remove this and keylistener later
-	run: function() {
-		BC.move();
-		for (var i = 0; i < BC.rooms.length; i++) {
-			BC.rooms[i].sendData();
-		}
-	  setTimeout(BC.run, 75);
-	},
-
-	move: function() {
-		if (BC.moveY != 0) {
-			var top = -(0.025 * dimension * BC.moveY);
-
-			if (BC.offsetY%dimension === 0) {
-				BC.updateRooms();
-			}
-			BC.offsetY += top;
-
-			$('.canvas-container').css('top', function(i, v) {
-			    return (parseFloat(v) - top) + 'px';
-			});
-		}
-		if (BC.moveX != 0) {
-			var left = 0.025 * dimension * BC.moveX;
-			
-			if (BC.offsetX%dimension === 0) {
-				BC.updateRooms();
-			}
-
-			BC.offsetX += left;
-
-			$('.canvas-container').css('left', function(i, v) {
-			    return (parseFloat(v) - left) + 'px';
-			});
-		}
-	},
-
-// pass in context and throw into helper library
-	setOverlayStyle: function() {
-		if (this.context.strokeStyle != this.style.color) {
-			this.context.strokeStyle = this.style.color;
-		}
-		if (this.context.lineWidth != this.style.width) {
-			this.context.lineWidth = this.style.width;
-		}
-		if (this.context.lineCap != this.style.lineCap) {
-			this.context.lineCap = this.style.lineCap;
-		}
-		if (this.context.lineJoin != this.style.lineJoin) {
-			this.context.lineJoin = this.style.lineJoin;
-		}
-	},
 
 	startStroke: function(startX, startY) {
-		this.setOverlayStyle();
+		Helper.loadStyle(this.context, this.style);
 
 		this.context.beginPath();
 		this.context.moveTo(startX-BC.offsetX, startY-BC.offsetY);
@@ -135,30 +77,41 @@ BC = {
 		this.processStroke();
 	},
 
+	strokeRooms: function(coordinate) {
+		var radius = (BC.style.width)/2
+		var currentRooms = []
+				currentRooms.push([Math.floor((coordinate.x+radius)/dimension), Math.floor((coordinate.y+radius)/dimension)]);
+				currentRooms.push([Math.floor((coordinate.x-radius)/dimension), Math.floor((coordinate.y+radius)/dimension)]);
+				currentRooms.push([Math.floor((coordinate.x+radius)/dimension), Math.floor((coordinate.y-radius)/dimension)]);
+				currentRooms.push([Math.floor((coordinate.x-radius)/dimension), Math.floor((coordinate.y-radius)/dimension)]);
+		return this.uniqueCoordinates(currentRooms);
+	},
+
 	processStroke: function() {
 		var activeRooms = [BC.findRoom(Math.floor(this.stroke[0].x/dimension), Math.floor(this.stroke[0].y/dimension))];
 		activeRooms[0].startStroke(this.stroke[0].x, this.stroke[0].y);
 
 		for (var i = 1; i < this.stroke.length; i++) {
-			currentRoom = BC.findRoom(Math.floor(this.stroke[i].x/dimension), Math.floor(this.stroke[i].y/dimension));
+			var uniqueRooms = this.strokeRooms(this.stroke[i]);
 
-			var newRoom = true;
-			for (var j = 0; j < activeRooms.length; j++) {
-				console.log(activeRooms[j].roomID)
-				if (activeRooms[j].roomID === currentRoom.roomID) {
-					newRoom = false;
-					break;
+			for (var a = 0; a < uniqueRooms.length; a++) {
+				var currentRoom = BC.findRoom(uniqueRooms[a][0], uniqueRooms[a][1]);
+				var newRoom = true;
+				for (var j = 0; j < activeRooms.length; j++) {
+					if (activeRooms[j].roomID === currentRoom.roomID) {
+						newRoom = false;
+						break;
+					}
 				}
-			}
-			if (newRoom) {
-				activeRooms.push(currentRoom)
-				currentRoom.startStroke(this.stroke[i-1].x, this.stroke[i-1].y);
+				if (newRoom) {
+					activeRooms.push(currentRoom)
+					currentRoom.startStroke(this.stroke[i-1].x, this.stroke[i-1].y);
+				}
 			}
 
 			for (var j = 0; j < activeRooms.length; j++) {
 				activeRooms[j].drawStroke(this.stroke[i].x, this.stroke[i].y);
 			}
-
 		}
 
 		for (var j = 0; j < activeRooms.length; j++) {
@@ -172,37 +125,18 @@ BC = {
 		this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);
 	},
 
-	drawLine: function() {
-		data = {
-			fromX:BC.fromX,
-			fromY:BC.fromY,
-			toX: BC.toX,
-			toY: BC.toY	
-		};
+	moveCanvas: function() {
+		var shiftLeft = BC.fromX - BC.toX;
+		var shiftTop = BC.fromY - BC.toY;
+		BC.offsetX += shiftLeft;
+		BC.offsetY += shiftTop;
+		$('.canvas-container').css('top', function(i, v) {
+	    return (parseFloat(v) - shiftTop) + 'px';
+		});
 
-		console.log("Context")
-		var lineStartRoom = BC.findRoom(Math.floor(BC.fromX/dimension), Math.floor(BC.fromY/dimension));
-		
-		lineStartRoom.drawLine(data);
-
-		if (Math.floor(BC.fromX/dimension) != Math.floor(BC.toX/dimension) || Math.floor(BC.fromY/dimension) != Math.floor(BC.toY/dimension)) {
-			var lineEndRoom = BC.findRoom(Math.floor(BC.toX/dimension), Math.floor(BC.toY/dimension));
-			lineEndRoom.drawLine(data);
-
-			var halfX = Math.floor((BC.fromX+(BC.toX-BC.fromX)/2)/dimension)
-			var halfY = Math.floor((BC.fromY+(BC.toY-BC.fromY)/2)/dimension)
-			// if (Math.floor(halfX/dimension) != Math.floor(BC.fromX/dimension) || Math.floor(halfX/dimension) != Math.floor(BC.toX/dimension)) {
-			// 	if (Math.floor(halfY/dimension) != Math.floor(BC.fromY/dimension) || Math.floor(halfY/dimension) != Math.floor(BC.toY/dimension)) {
-			// 		var lineMidRoom = BC.findRoom(Math.floor(halfX/dimension), Math.floor(halfY/dimension));
-			// 		lineMidRoom.drawLine(data);	
-			// 		console.log("HELPING")			
-			// 	}
-			// }
-		}
-		console.log(data);
-
-		BC.fromX = BC.toX
-		BC.fromY = BC.toY
+		$('.canvas-container').css('left', function(i, v) {
+	    return (parseFloat(v) - shiftLeft) + 'px';
+		});
 	},
 
 	installMouseListeners: function() {		
@@ -210,47 +144,33 @@ BC = {
 
 		$('#viewport').mousedown(function(e) {
 			if (e.which === 3 || e.button === 2) {
+				BC.fromX = e.pageX + BC.offsetX;
+				BC.fromY = e.pageY + BC.offsetY;
 				BC.rightClick = true;
 				document.body.style.cursor = 'move';
+			} else {
+				BC.leftClick = true;
+				BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 			}
-			BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
-			BC.fromX = e.pageX + BC.offsetX;
-			BC.fromY = e.pageY + BC.offsetY;
 		});
+
 		$('#viewport').mousemove(function(e) {
-			if (BC.fromX) {
+			if (BC.rightClick) {
 				BC.toX = e.pageX + BC.offsetX;
 				BC.toY = e.pageY + BC.offsetY;
-				
-				if (BC.rightClick) {
-					// move to movecanvas function
-					var shiftLeft = BC.fromX - BC.toX;
-					var shiftTop = BC.fromY - BC.toY;
-					BC.offsetX += shiftLeft;
-					BC.offsetY += shiftTop;
-					$('.canvas-container').css('top', function(i, v) {
-				    return (parseFloat(v) - shiftTop) + 'px';
-					});
-
-					$('.canvas-container').css('left', function(i, v) {
-				    return (parseFloat(v) - shiftLeft) + 'px';
-					});
-
-					BC.updateRooms();
-				} else {
-					BC.drawStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
-					//BC.drawLine();
-				}
+				BC.moveCanvas();
+			} else if (BC.leftClick) {
+				BC.drawStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 			}
 		});
+
 		$('#viewport').mouseup(function(e) {
 			if (BC.rightClick) {
 				BC.rightClick = false;
+				BC.updateRooms();
 				document.body.style.cursor = 'default';
-			}
-			if (BC.fromX) {
-				BC.fromX = null;
-				BC.fromY = null;
+			} else if (BC.leftClick) {
+				BC.leftClick = false;
 				BC.endStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 			}
 		});
@@ -259,7 +179,6 @@ BC = {
 	findRoom: function(x, y) {
 		for (var i = 0; i < BC.rooms.length; i++) {
 			if (BC.rooms[i].x === x && BC.rooms[i].y === y) {
-				console.log(BC.rooms[i]);
 				return BC.rooms[i];
 			}
 		}
@@ -267,49 +186,21 @@ BC = {
 	},
 
 	installKeyListeners: function() {
-		$(document).keyup(function(e) {
-			var pressedKey = e.which
-			if (pressedKey === 37 || pressedKey === 39) {
-				BC.moveX = 0;
-			} else if (pressedKey === 38 || pressedKey === 40) {
-				BC.moveY = 0;
-			}
-		});
-		$(document).keydown(function(e) {
-			var pressedKey = e.which
-			if (BC.moveX != 0 && (pressedKey === 37 || pressedKey === 39)) {
-				return false;
-			}
-			if (BC.moveY != 0 && (pressedKey === 38 || pressedKey === 40)) {
-				return false;
-			}
-			switch (pressedKey) {
-				case 37:
-					BC.moveX = -1;
-					break;
-				case 38:
-					BC.moveY = 1;
-					break;
-				case 39:
-					BC.moveX = 1;
-					break;
-				case 40:
-					BC.moveY = -1;
-					break;
-			}
-		});
-	},
+		// $(document).keypress(function(e) {
+		// 	switch (e.which) {
+		// 		case 98:
+		// 			$('#colorpicker').show();
+		// 		break;
 
-	installSocketListeners: function() {
-	  socket.on('connect', function(){
-	    console.log("connected")
-	  });
+		// 		case 115:
+		// 			$('#size-picker').closest('input').focus();
+		// 		break;
+		// 	}
+		// 	return false;
+		// });
 	},
 
 	updateRooms: function() {
-		//check room of top left
-		//check room of top right
-		//check room of top 
 		var $window = $(window);
 		var corners = []
 		corners.push([Math.floor(BC.offsetX/dimension), Math.floor(BC.offsetY/dimension)]);
@@ -359,7 +250,12 @@ BC = {
 				newRooms.push(new Room(roomCoordinates[i][0], roomCoordinates[i][1], BC.offsetX, BC.offsetY));
 			}
 		}
+		this.removeUnused(reusedRooms);
 
+		BC.rooms = newRooms;
+ 	},
+
+ 	removeUnused: function(reusedRooms) {
 		for (var i = 0; i < BC.rooms.length; i++) {
 			for (var j = 0; j < reusedRooms.length; j++) {
 				var used = false;
@@ -372,6 +268,5 @@ BC = {
 				BC.rooms[i].remove();
 			}
 		}
-		BC.rooms = newRooms;
  	}
 };
