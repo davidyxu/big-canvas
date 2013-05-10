@@ -11,6 +11,13 @@ BSON = mongo.BSONPure;
 con = null;
 connection = null;
 
+
+largestX = -50;
+largestY = -50;
+smallestX = 50;
+smallestY = 50;
+changedEdges = false;
+
 server = new Server('linus.mongohq.com', '10045', {auto_reconnect: true});
 DBCon = new Db('app15526437', server, {safe: false});
 DBCon.open(function(err, db) {
@@ -19,6 +26,7 @@ DBCon.open(function(err, db) {
       if(!err) {
       	con = db;
 				collection = new mongo.Collection(con, "canvasURI");
+
 				startApp();
 	    }
     })
@@ -81,7 +89,6 @@ Room.prototype.loadURI = function(uri) {
 var activeRooms = {};
 var startX = 0;
 var startY = 0;
-
 //Node Server
 var express = require('express')
   , app = express()
@@ -93,7 +100,6 @@ var port = process.env.PORT || 5000;
 
 startApp = function() {
 	server.listen(port);
-
 	// routing
 	app.get('/', function (req, res) {
 	  res.sendfile(__dirname + '/index.html');
@@ -118,7 +124,15 @@ startApp = function() {
 				loadRoom(socket, roomID);
 			}
 		})
-
+		socket.on('getOverview', function() {
+			metaCollection.find({overview: {$exists: true}}).nextObject(function(err, docs) {
+				if (err) {
+					console.log(err);
+				} else if (docs) {
+					socket.emit('loadOverview', docs.overview);
+				}
+			});
+		})
 		socket.on('unsubscribe', function(roomID) {
 			socket.leave(roomID);
 		})
@@ -152,6 +166,9 @@ loadRoom = function(socket, roomID) {
 		}
 	});
 }
+
+
+
 
 updateActiveRooms = function() {
 	for (var roomID in activeRooms) {
