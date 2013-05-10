@@ -78,6 +78,11 @@ BC = {
 		this.processStroke();
 	},
 
+	getColor: function(pointX, pointY) {
+		var room = BC.findRoom(Math.floor(pointX/dimension), Math.floor(pointY/dimension));
+		room.getColor(pointX, pointY);
+	},
+
 	strokeRooms: function(coordinate) {
 		var radius = (BC.style.width)/2
 		var currentRooms = []
@@ -162,7 +167,6 @@ BC = {
 			}
 		})
 		$(document).keyup(function(e) {
-			console.log(BC.modifier);
 			BC.modifier = false;
 		});
 	},
@@ -187,14 +191,22 @@ BC = {
 					BC.style.color = "#FFFFFF";
 					console.log(BC.style.color);
 					console.log(BC.colorHolder);
+					BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+
+				} else if (BC.modifier === 18) {
+					BC.getColor(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+				} else {
+					BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);	
 				}
-				BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+				
 			}
 			return false;
 		});
 
 		$('#viewport').mousemove(function(e) {
-			if (BC.rightClick) {
+			if (BC.modifier === 18 && BC.leftClick) {
+				BC.getColor(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+			} else if (BC.rightClick) {
 				BC.toX = e.pageX + BC.offsetX;
 				BC.toY = e.pageY + BC.offsetY;
 				BC.moveCanvas();

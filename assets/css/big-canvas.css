@@ -38,7 +38,7 @@ html, body {
 
 .option {
 	margin-left: 5px;
-	margin-right: 20px;
+	margin-right: 10px;
 	float: left;
 	display: inline;
 }
@@ -51,9 +51,12 @@ html, body {
 .instructions:hover span {
 	display: none;
 }
+#about {
+	color: #292929;
+}
 
-.instructions:hover:before {
-	content: "right-click + drag to move, ctrl to erase";
+.instructions:hover:after {
+	content: "right-click + drag = move, ctrl = erase, alt = eyedropper";
 }
 
 #menu-options {

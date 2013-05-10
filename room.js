@@ -28,6 +28,14 @@ function Room(x, y, offsetX, offsetY) {
 
 }
 
+Room.prototype.getColor = function(pointX, pointY) {
+	data = this.context.getImageData(pointX - this.offsetX, pointY - this.offsetY, 1, 1).data
+	if (data[3] != 0) {
+		BC.style.color = "rgba(" + data[0] + "," + data[1] + "," + data[2] + "," + data[3] +  ")";
+		$("#color-picker").spectrum("set", BC.style.color);
+	}
+}
+
 Room.prototype.startStroke = function(startX, startY) {
 	Helper.loadStyle(this.context, BC.style);
 	this.context.beginPath();
