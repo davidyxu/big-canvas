@@ -53,7 +53,6 @@ Room.prototype.endStroke = function() {
 	this.context.closePath();
 	// emit drawline;
 	socket.emit('drawPath', this.roomID, BC.style, this.history);
-	console.log(this.history)
 	this.history = [];
 }
 
@@ -79,7 +78,6 @@ Room.prototype.loadURI = function(uri) {
 }
 
 Room.prototype.remove = function() {
-	console.log("unsubscribing from: " + this.roomID);
 	socket.emit('unsubscribe', this.roomID);
 	this.$container.remove();
 }

@@ -211,8 +211,6 @@ BC = {
 				BC.style.color = BC.colorHolder;
 				BC.colorHolder = currentColor;
 				$("#color-picker").spectrum("set", BC.style.color);
-				console.log(BC.style.color);
-				console.log(BC.colorHolder);
 			}
 			BC.modifier = false;
 		});
@@ -373,9 +371,7 @@ BC = {
  	removeMouse: function(sessionID) {
  		if (BC.mice[sessionID]) {
  			var selector = '#' + sessionID;
- 			console.log(selector);
 	 		$(selector).remove();
-	 		console.log("removed:" + sessionID);
 	 		delete BC.mice[sessionID];
  		}
  	}
