@@ -43,6 +43,7 @@ function Room(x, y){
 	this.offsetX = x*dimension;
 	this.offsetY = y*dimension;
 	this.updated = false;
+	this.unchanged = true;
 	this.canvas = new Canvas(dimension, dimension);
 	this.context = this.canvas.getContext('2d');	
 }
@@ -75,6 +76,9 @@ Room.prototype.drawPath = function(style, data) {
 	this.context.stroke();
 	this.context.closePath();
 	this.updated = true;
+	if (this.unchanged) {
+		this.unchanged = false;
+	}
 }
 
 Room.prototype.loadURI = function(uri) {
@@ -173,14 +177,16 @@ loadRoom = function(socket, roomID) {
 updateActiveRooms = function() {
 	for (var roomID in activeRooms) {
 	  if (!activeRooms[roomID].updated) {
-			collection.update({roomID: roomID}, {$set: {uri: activeRooms[roomID].canvas.toDataURL()}}, {safe: true, upsert: true}, function(err, object) {
-				if (err) {
-					console.log(roomID + ": " + err);
-				} else {
-					console.log(roomID + " updated");
-			  	delete activeRooms[roomID];
-				}
-			})
+	  	if (!activeRooms[roomID].unchanged) {
+				collection.update({roomID: roomID}, {$set: {uri: activeRooms[roomID].canvas.toDataURL()}}, {safe: true, upsert: true}, function(err, object) {
+					if (err) {
+						console.log(roomID + ": " + err);
+					} else {
+						console.log(roomID + " updated");
+				  	delete activeRooms[roomID];
+					}
+				})
+			}
 	  } else {
 	  	activeRooms[roomID].updated = false;
 	  }

@@ -5,7 +5,21 @@ socket.on('connect', function(){
 
 socket.on('start', function(x, y) {
 	$(function() {
-		BC.initialize(x, y);
+		if (window.location.search) {
+			var parsedID = window.location.search.slice(2).split('y');
+			var startX = parseInt(parsedID[0]);
+			var startY = parseInt(parsedID[1]);
+			console.log(startX);
+			console.log(startY);
+			if (isFinite(startX) && isFinite(startY)) {
+				console.log('test');
+				BC.initialize(startX, startY);
+			} else {
+				BC.initialize(x, y);
+			}
+		} else {
+			BC.initialize(x, y);	
+		}
 	});
 });
 
