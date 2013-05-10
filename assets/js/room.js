@@ -79,6 +79,7 @@ Room.prototype.loadURI = function(uri) {
 }
 
 Room.prototype.remove = function() {
+	console.log("unsubscribing from: " + this.roomID);
 	socket.emit('unsubscribe', this.roomID);
 	this.$container.remove();
 }

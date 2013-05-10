@@ -20,16 +20,33 @@ BC = {
 	mice: {},
 
 	initialize: function(x, y) {
-		BC.offsetX = dimension * x;
-		BC.offsetY = dimension * y;
-
-		BC.initializeRooms(x, y);
+		BC.loadCoordinates(x, y);
 		BC.installKeyListeners();
 		BC.installMouseListeners();
 		BC.installOverlay();
 
+
 		BC.sessionID = socket.socket.sessionid
 		setInterval(BC.submitMouse, 75);
+	},
+
+	loadCoordinates: function(x, y) {
+		for (var i = 0; i < BC.rooms.length; i++) {
+			BC.rooms[i].remove();
+		}
+		BC.rooms = [];
+		BC.offsetX = dimension * x;
+		BC.offsetY = dimension * y;
+
+		$('.canvas-container').remove();
+		$('.mouse-container').remove();
+
+		window.setTimeout(function() {
+			BC.initializeRooms(x, y);
+		}, 150);
+
+		$('#x-picker').val(x);
+		$('#y-picker').val(y);
 	},
 
 	installOverlay: function() {
@@ -166,9 +183,16 @@ BC = {
 		});
 		$(document).keypress(function(e) {
 			switch (e.which) {
+				case 120:
+				$('#x-picker.coord-picker').focus();
+				return false;
+					break;
+				case 121:
+				$('#y-picker.coord-picker').focus();
+				return false;
+					break;
 				case 98:
 				$('#brush-picker').focus();
-				return false;
 					break;
 				case 99:
 				$('.sp-replacer').trigger('click');

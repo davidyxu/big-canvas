@@ -10,26 +10,53 @@ Helper = {
 
 		$('#menu').width(window.innerWidth);
 	},
-	setSize: function(event) {
+	validateNumber: function(event) {
+		console.log(this);
     var key = window.event ? event.keyCode : event.which;
 
     if (key === 8 || key === 46
      || key === 37 || key === 39) {
-				BC.style.width = $('#size-picker').val();
-        return true;
+     		if ($(this).hasClass('coord-picker')) {
+     			Helper.loadCoordinates();
+				} else {
+					BC.style.width = $('#size-picker').val();
+				}
+				return true;
     }
     else if ( key < 48 || key > 57 ) {
-    	if (key === 99) {
-				$('.sp-replacer').trigger('click');
-    	} else if (key === 98) {
+    	switch (key) {
+				case 120:
+				$('#x-picker.coord-picker').focus();
+					break;
+				case 121:
+				$('#y-picker.coord-picker').focus();
+					break;
+				case 98:
 				$('#brush-picker').focus();
+					break;
+				case 99:
+				$('.sp-replacer').trigger('click');
+					break;
+				case 115:
+				$('#size-picker').focus();
+					break;
     	}
       return false;
     }
     else {
-			BC.style.width = $('#size-picker').val();
+   		if ($(this).hasClass('coord-picker')) {
+   			Helper.loadCoordinates();
+			} else {
+				BC.style.width = $('#size-picker').val();
+			}
 			return true;
     }
+	},
+
+	loadCoordinates:function() {
+		if ($('#x-picker').val().length != 0 && $('#y-picker').val().length != 0) {
+			BC.loadCoordinates(parseInt($('#x-picker').val()), parseInt($('#y-picker').val()));		
+		}
 	},
 
 	loadStyle: function(context, style) {

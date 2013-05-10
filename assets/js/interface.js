@@ -3,7 +3,13 @@ $(function() {
 		BC.style.width = $('#size-picker').val();
 	});
 
-	$('#size-picker').keypress(Helper.setSize);
+	$('.coord-picker').change(function() {
+		Helper.loadCoordinates();
+	});
+
+	$('#size-picker').keypress(Helper.validateNumber);
+	$('#x-picker').keypress(Helper.validateNumber);
+	$('#y-picker').keypress(Helper.validateNumber);
 
 	$('#color-label').mouseup(function() {
 		if ($('.sp-active').length === 0) {

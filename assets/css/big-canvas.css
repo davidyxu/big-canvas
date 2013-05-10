@@ -79,6 +79,9 @@ input {
 input#color-picker {
   width: 65px;
 }
+input.coord-picker {
+	width: 35px;
+}
 
 input#size-picker {
   width: 35px;
