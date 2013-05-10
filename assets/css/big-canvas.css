@@ -21,10 +21,11 @@
 }
 
 .mouse-container {
-	width: 18px;
-	height: 18px;
+	width: 14px;
+	height: 14px;
 	position: absolute;
-	background-image: url('https://s3.amazonaws.com/big-canvas/assets/images/glyph-pencil.png');
+  background-repeat: no-repeat;
+	background-image: url('https://s3.amazonaws.com/big-canvas/assets/images/pencil.png');
 	z-index: 5;
 }
 .sketchpad {

@@ -29,7 +29,7 @@ BC = {
 		BC.installOverlay();
 
 		BC.sessionID = socket.socket.sessionid
-		setInterval(BC.submitMouse, 100);
+		setInterval(BC.submitMouse, 75);
 	},
 
 	installOverlay: function() {
@@ -333,7 +333,7 @@ BC = {
 
  	drawMouse: function(sessionID, mousePosition) {
  		if (BC.mice[sessionID]) {
- 			BC.mice[sessionID].css('left', mousePosition.x - BC.offsetX).css('top', mousePosition.y - BC.offsetY);
+ 			BC.mice[sessionID].css('left', mousePosition.x - BC.offsetX).css('top', mousePosition.y - BC.offsetY-14);
  		} else {
 	 		BC.addMouse(sessionID, mousePosition);
 	 	}
@@ -341,7 +341,7 @@ BC = {
 
  	addMouse: function(sessionID, mousePosition) {
  		BC.mice[sessionID] = $('<div></div>').addClass('mouse-container');
- 		BC.mice[sessionID].css('left', mousePosition.x - BC.offsetX).css('top', mousePosition.y - BC.offsetY);
+ 		BC.mice[sessionID].css('left', mousePosition.x - BC.offsetX).css('top', mousePosition.y - BC.offsetY-14);
  		BC.mice[sessionID].attr('id', sessionID);
  		$('#viewport').append(BC.mice[sessionID]);
  	},

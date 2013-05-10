@@ -22,6 +22,7 @@ $(function() {
 		}
 	});
 
+
 	$('#color-picker').spectrum({
     showAlpha: true,
     showPalette: true,
@@ -32,7 +33,6 @@ $(function() {
     palette: [['black', 'gray', 'white']],
     localStorageKey: "big.canvas",
     move: function(color) {
-    	BC.colorHolder = BC.style.color;
     	BC.style.color = color.toRgbString();
     }
 	});
