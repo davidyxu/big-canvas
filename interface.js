@@ -32,6 +32,7 @@ $(function() {
     palette: [['black', 'gray', 'white']],
     localStorageKey: "big.canvas",
     move: function(color) {
+    	BC.colorHolder = BC.style.color;
     	BC.style.color = color.toRgbString();
     }
 	});

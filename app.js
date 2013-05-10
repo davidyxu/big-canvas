@@ -12,12 +12,6 @@ con = null;
 connection = null;
 
 
-largestX = -50;
-largestY = -50;
-smallestX = 50;
-smallestY = 50;
-changedEdges = false;
-
 server = new Server('linus.mongohq.com', '10045', {auto_reconnect: true});
 DBCon = new Db('app15526437', server, {safe: false});
 DBCon.open(function(err, db) {
@@ -90,6 +84,7 @@ Room.prototype.loadURI = function(uri) {
 		img.src = uri;
 }
 
+var activeMice = {};
 var activeRooms = {};
 var startX = 0;
 var startY = 0;
@@ -128,18 +123,24 @@ startApp = function() {
 				loadRoom(socket, roomID);
 			}
 		})
-		socket.on('getOverview', function() {
-			metaCollection.find({overview: {$exists: true}}).nextObject(function(err, docs) {
-				if (err) {
-					console.log(err);
-				} else if (docs) {
-					socket.emit('loadOverview', docs.overview);
-				}
-			});
-		})
+
 		socket.on('unsubscribe', function(roomID) {
 			socket.leave(roomID);
 		})
+
+		socket.on('mouseAt', function(roomID, sessionID, mousePosition) {
+			activeMice[sessionID] = mousePosition;
+			activeMice[sessionID].roomID = roomID;
+			socket.broadcast.to(roomID).emit('drawMouse', sessionID, mousePosition);
+		})
+
+		socket.on('disconnect', function() {
+			var sessionID = this.id;
+			if (activeMice[sessionID]) {
+				socket.broadcast.to(activeMice[sessionID].roomID).emit('removeMouse', sessionID);
+				delete activeMice[sessionID]
+			}
+		});
 
 		socket.on('drawPath', function(roomID, style, history) {
 			if (!activeRooms[roomID]) {
@@ -170,9 +171,6 @@ loadRoom = function(socket, roomID) {
 		}
 	});
 }
-
-
-
 
 updateActiveRooms = function() {
 	for (var roomID in activeRooms) {

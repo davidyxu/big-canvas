@@ -1,0 +1,40 @@
+<html>
+	<head>
+		<link href='http://fonts.googleapis.com/css?family=Roboto+Slab' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" type="text/css" href="https://s3.amazonaws.com/big-canvas/assets/css/big-canvas.css">
+		<script src="/socket.io/socket.io.js"></script>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+
+		<script src="https://s3.amazonaws.com/big-canvas/assets/js/helpers.js"></script>
+		<script src="https://s3.amazonaws.com/big-canvas/assets/js/sockets.js"></script>
+		<script src="https://s3.amazonaws.com/big-canvas/assets/js/interface.js"></script>
+
+		<script src="https://s3.amazonaws.com/big-canvas/assets/js/room.js"></script>
+		<script src="https://s3.amazonaws.com/big-canvas/assets/js/big-canvas.js"></script>
+
+		<link rel="stylesheet" media="screen" type="text/css" href="https://s3.amazonaws.com/big-canvas/assets/css/spectrum.css" />
+		<script type="text/javascript" src="https://s3.amazonaws.com/big-canvas/assets/js/spectrum.js"></script>
+		<script>
+			$(function() {
+				var socket = io.connect(window.location.hostname);
+				socket.on('connect', function(){
+				  socket.emit('getOverview');
+				});
+				
+				socket.on('loadOverview', function(uri) {
+					var img = new Image;
+					var context = $('canvas')[0].getContext("2d");
+					img.onload = function() {
+						context.drawImage(img, 0, 0);
+					}
+					img.src = uri;
+				});
+			});
+		</script>
+	</head>
+
+	<body>
+		<canvas style="width: 1000px; height: 1000px;" width="2000" height="2000">
+	</body>
+</html>

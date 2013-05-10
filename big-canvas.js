@@ -7,7 +7,8 @@ BC = {
 	modifier: false,
 	offsetX: 0,
 	offsetY: 0,
-	colorHolder: null,
+	mousePosition: {x:0, y:0},
+	colorHolder: "#FFFFFF",
 	style: {
 		color: "#000000",
 		width: 5.0,
@@ -16,6 +17,7 @@ BC = {
 	},
 	stroke: [],
 	rooms: [],
+	mice: {},
 
 	initialize: function(x, y) {
 		BC.offsetX = dimension * x;
@@ -25,6 +27,9 @@ BC = {
 		BC.installKeyListeners();
 		BC.installMouseListeners();
 		BC.installOverlay();
+
+		BC.sessionID = socket.socket.sessionid
+		setInterval(BC.submitMouse, 100);
 	},
 
 	installOverlay: function() {
@@ -132,8 +137,8 @@ BC = {
 	},
 
 	moveCanvas: function() {
-		var shiftLeft = BC.fromX - BC.toX;
-		var shiftTop = BC.fromY - BC.toY;
+		var shiftLeft = BC.fromX - BC.mousePosition.x;
+		var shiftTop = BC.fromY - BC.mousePosition.y;
 		BC.offsetX += shiftLeft;
 		BC.offsetY += shiftTop;
 		$('.canvas-container').css('top', function(i, v) {
@@ -143,11 +148,19 @@ BC = {
 		$('.canvas-container').css('left', function(i, v) {
 	    return (parseFloat(v) - shiftLeft) + 'px';
 		});
+
+		$('.mouse-container').css('top', function(i, v) {
+	    return (parseFloat(v) - shiftTop) + 'px';
+		});
+
+		$('.mouse-container').css('left', function(i, v) {
+	    return (parseFloat(v) - shiftLeft) + 'px';
+		});
 	},
 
 	installKeyListeners: function() {
 		$(document).keydown(function(e) {
-			if (BC.modifier != e.which && !BC.colorHolder) {
+			if (BC.modifier != e.which && !BC.leftClick) {
 				BC.modifier = e.which;
 			}
 		});
@@ -167,6 +180,16 @@ BC = {
 			}
 		})
 		$(document).keyup(function(e) {
+			if (BC.modifier === 18) {
+				BC.leftClick = false;
+			} else if (BC.modifier === 17) {
+				var currentColor = BC.style.color;
+				BC.style.color = BC.colorHolder;
+				BC.colorHolder = currentColor;
+				$("#color-picker").spectrum("set", BC.style.color);
+				console.log(BC.style.color);
+				console.log(BC.colorHolder);
+			}
 			BC.modifier = false;
 		});
 	},
@@ -186,14 +209,7 @@ BC = {
 			} else {
 				BC.leftClick = true;
 				document.body.style.cursor = 'crosshair';
-				if (BC.modifier === 17) {
-					BC.colorHolder = BC.style.color;
-					BC.style.color = "#FFFFFF";
-					console.log(BC.style.color);
-					console.log(BC.colorHolder);
-					BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
-
-				} else if (BC.modifier === 18) {
+				if (BC.modifier === 18) {
 					BC.getColor(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
 				} else {
 					BC.startStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);	
@@ -204,14 +220,14 @@ BC = {
 		});
 
 		$('#viewport').mousemove(function(e) {
+			BC.mousePosition.x = e.pageX + BC.offsetX;
+			BC.mousePosition.y = e.pageY + BC.offsetY;
 			if (BC.modifier === 18 && BC.leftClick) {
-				BC.getColor(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+				BC.getColor(BC.mousePosition.x, BC.mousePosition.y);
 			} else if (BC.rightClick) {
-				BC.toX = e.pageX + BC.offsetX;
-				BC.toY = e.pageY + BC.offsetY;
 				BC.moveCanvas();
 			} else if (BC.leftClick) {
-				BC.drawStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
+				BC.drawStroke(BC.mousePosition.x, BC.mousePosition.y);
 			}
 		});
 
@@ -222,10 +238,6 @@ BC = {
 			} else if (BC.leftClick) {
 				BC.leftClick = false;
 				BC.endStroke(e.pageX + BC.offsetX, e.pageY + BC.offsetY);
-				if (BC.colorHolder) {
-					BC.style.color = BC.colorHolder;
-					BC.colorHolder = null;
-				}
 			}
 			document.body.style.cursor = 'default';
 		});
@@ -308,5 +320,39 @@ BC = {
 				BC.rooms[i].remove();
 			}
 		}
+ 	},
+
+ 	submitMouse: function() {
+ 		if (BC.oldX != BC.mousePosition.x && BC.oldY != BC.mousePosition.y) {
+			var roomID = "x" + Math.floor(BC.mousePosition.x/dimension) + "y" + Math.floor(BC.mousePosition.y/dimension);
+	 		socket.emit('mouseAt', roomID, BC.sessionID, BC.mousePosition); 			
+ 		} 
+ 		BC.oldX = BC.mousePosition.x;
+ 		BC.oldY = BC.mousePosition.y;
+ 	},
+
+ 	drawMouse: function(sessionID, mousePosition) {
+ 		if (BC.mice[sessionID]) {
+ 			BC.mice[sessionID].css('left', mousePosition.x - BC.offsetX).css('top', mousePosition.y - BC.offsetY);
+ 		} else {
+	 		BC.addMouse(sessionID, mousePosition);
+	 	}
+ 	},
+
+ 	addMouse: function(sessionID, mousePosition) {
+ 		BC.mice[sessionID] = $('<div></div>').addClass('mouse-container');
+ 		BC.mice[sessionID].css('left', mousePosition.x - BC.offsetX).css('top', mousePosition.y - BC.offsetY);
+ 		BC.mice[sessionID].attr('id', sessionID);
+ 		$('#viewport').append(BC.mice[sessionID]);
+ 	},
+
+ 	removeMouse: function(sessionID) {
+ 		if (BC.mice[sessionID]) {
+ 			var selector = '#' + sessionID;
+ 			console.log(selector);
+	 		$(selector).remove();
+	 		console.log("removed:" + sessionID);
+	 		delete BC.mice[sessionID];
+ 		}
  	}
 };

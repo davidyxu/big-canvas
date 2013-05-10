@@ -3,6 +3,10 @@ Helper = {
 
 		$('#viewport').width(window.innerWidth);
 		$('#viewport').height(window.innerHeight - 30);
+		$('#overlay').width(window.innerWidth);
+		$('#overlay').height(window.innerHeight - 30);
+		$('#overlay').closest('canvas').width = window.innerWidth;
+		$('#overlay').closest('canvas').height = window.innerHeight - 30;
 
 		$('#menu').width(window.innerWidth);
 	},

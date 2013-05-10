@@ -30,7 +30,7 @@ function Room(x, y, offsetX, offsetY) {
 
 Room.prototype.getColor = function(pointX, pointY) {
 	data = this.context.getImageData(pointX - this.offsetX, pointY - this.offsetY, 1, 1).data
-	if (data[3] != 0) {
+	if (data[3] != 0 && (data[0]!== 255 && data[1]!==255 && data[2]!==255)) {
 		BC.style.color = "rgba(" + data[0] + "," + data[1] + "," + data[2] + "," + data[3] +  ")";
 		$("#color-picker").spectrum("set", BC.style.color);
 	}
@@ -51,7 +51,6 @@ Room.prototype.drawStroke = function(pointX, pointY) {
 Room.prototype.endStroke = function() {
 	this.context.stroke();
 	this.context.closePath();
-	console.log("path closed")
 	// emit drawline;
 	socket.emit('drawPath', this.roomID, BC.style, this.history);
 	console.log(this.history)

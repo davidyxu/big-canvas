@@ -38,3 +38,13 @@ socket.on('drawPath', function(roomID, style, history) {
 		room.drawPath(style, history);
 	}
 });
+
+socket.on('removeMouse', function(sessionID) {
+	console.log("removing");
+	console.log(sessionID);
+	BC.removeMouse(sessionID);
+});
+
+socket.on('drawMouse', function(sessionID, mousePosition) {
+	BC.drawMouse(sessionID, mousePosition);
+});
