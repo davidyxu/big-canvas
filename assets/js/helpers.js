@@ -11,7 +11,6 @@ Helper = {
 		$('#menu').width(window.innerWidth);
 	},
 	validateNumber: function(event) {
-		console.log(this);
     var key = window.event ? event.keyCode : event.which;
 
     if (key === 8 || key === 46
