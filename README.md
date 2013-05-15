@@ -5,7 +5,7 @@ An infinitely large multi-user white board that expands as necessary.
 
 Build on Node.js, socket.io, and html5 canvas. Drawings are persisted as data URI into a MongoDB database.
 
-See it live at big-canvas.david-xu.com
+See it live on [Heroku](big-canvas.david-xu.com)
 
 
 ###Features include:
