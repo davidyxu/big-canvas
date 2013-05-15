@@ -8,9 +8,12 @@ Build on Node.js, socket.io, and html5 canvas. Drawings are persisted as data UR
 See it live at big-canvas.david-xu.com
 
 
-Features include:
+###Features include:
 1. Colours, opacity, brush size, and brush stroke
+
 2. Eyedropper tool
+
 3. Local storage for colours used
+
 4. Switchable colours
 
